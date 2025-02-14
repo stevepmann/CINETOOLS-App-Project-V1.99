@@ -1,0 +1,563 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		1F23E0DB2D5FF33200A15447 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1F23E0C22D5FF33100A15447 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1F23E0C92D5FF33100A15447;
+			remoteInfo = "CINETOOLS App Project";
+		};
+		1F23E0E52D5FF33200A15447 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1F23E0C22D5FF33100A15447 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1F23E0C92D5FF33100A15447;
+			remoteInfo = "CINETOOLS App Project";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1F23E0CA2D5FF33100A15447 /* CINETOOLS App Project.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CINETOOLS App Project.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1F23E0DA2D5FF33200A15447 /* CINETOOLS App ProjectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CINETOOLS App ProjectTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1F23E0E42D5FF33200A15447 /* CINETOOLS App ProjectUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CINETOOLS App ProjectUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		1F23E0CC2D5FF33100A15447 /* CINETOOLS App Project */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CINETOOLS App Project";
+			sourceTree = "<group>";
+		};
+		1F23E0DD2D5FF33200A15447 /* CINETOOLS App ProjectTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CINETOOLS App ProjectTests";
+			sourceTree = "<group>";
+		};
+		1F23E0E72D5FF33200A15447 /* CINETOOLS App ProjectUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CINETOOLS App ProjectUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1F23E0C72D5FF33100A15447 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1F23E0D72D5FF33200A15447 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1F23E0E12D5FF33200A15447 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1F23E0C12D5FF33100A15447 = {
+			isa = PBXGroup;
+			children = (
+				1F23E0CC2D5FF33100A15447 /* CINETOOLS App Project */,
+				1F23E0DD2D5FF33200A15447 /* CINETOOLS App ProjectTests */,
+				1F23E0E72D5FF33200A15447 /* CINETOOLS App ProjectUITests */,
+				1F23E0CB2D5FF33100A15447 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1F23E0CB2D5FF33100A15447 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1F23E0CA2D5FF33100A15447 /* CINETOOLS App Project.app */,
+				1F23E0DA2D5FF33200A15447 /* CINETOOLS App ProjectTests.xctest */,
+				1F23E0E42D5FF33200A15447 /* CINETOOLS App ProjectUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1F23E0C92D5FF33100A15447 /* CINETOOLS App Project */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1F23E0EE2D5FF33200A15447 /* Build configuration list for PBXNativeTarget "CINETOOLS App Project" */;
+			buildPhases = (
+				1F23E0C62D5FF33100A15447 /* Sources */,
+				1F23E0C72D5FF33100A15447 /* Frameworks */,
+				1F23E0C82D5FF33100A15447 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				1F23E0CC2D5FF33100A15447 /* CINETOOLS App Project */,
+			);
+			name = "CINETOOLS App Project";
+			packageProductDependencies = (
+			);
+			productName = "CINETOOLS App Project";
+			productReference = 1F23E0CA2D5FF33100A15447 /* CINETOOLS App Project.app */;
+			productType = "com.apple.product-type.application";
+		};
+		1F23E0D92D5FF33200A15447 /* CINETOOLS App ProjectTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1F23E0F12D5FF33200A15447 /* Build configuration list for PBXNativeTarget "CINETOOLS App ProjectTests" */;
+			buildPhases = (
+				1F23E0D62D5FF33200A15447 /* Sources */,
+				1F23E0D72D5FF33200A15447 /* Frameworks */,
+				1F23E0D82D5FF33200A15447 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1F23E0DC2D5FF33200A15447 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1F23E0DD2D5FF33200A15447 /* CINETOOLS App ProjectTests */,
+			);
+			name = "CINETOOLS App ProjectTests";
+			packageProductDependencies = (
+			);
+			productName = "CINETOOLS App ProjectTests";
+			productReference = 1F23E0DA2D5FF33200A15447 /* CINETOOLS App ProjectTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		1F23E0E32D5FF33200A15447 /* CINETOOLS App ProjectUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1F23E0F42D5FF33200A15447 /* Build configuration list for PBXNativeTarget "CINETOOLS App ProjectUITests" */;
+			buildPhases = (
+				1F23E0E02D5FF33200A15447 /* Sources */,
+				1F23E0E12D5FF33200A15447 /* Frameworks */,
+				1F23E0E22D5FF33200A15447 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1F23E0E62D5FF33200A15447 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1F23E0E72D5FF33200A15447 /* CINETOOLS App ProjectUITests */,
+			);
+			name = "CINETOOLS App ProjectUITests";
+			packageProductDependencies = (
+			);
+			productName = "CINETOOLS App ProjectUITests";
+			productReference = 1F23E0E42D5FF33200A15447 /* CINETOOLS App ProjectUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1F23E0C22D5FF33100A15447 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					1F23E0C92D5FF33100A15447 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					1F23E0D92D5FF33200A15447 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 1F23E0C92D5FF33100A15447;
+					};
+					1F23E0E32D5FF33200A15447 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 1F23E0C92D5FF33100A15447;
+					};
+				};
+			};
+			buildConfigurationList = 1F23E0C52D5FF33100A15447 /* Build configuration list for PBXProject "CINETOOLS App Project" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1F23E0C12D5FF33100A15447;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 1F23E0CB2D5FF33100A15447 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1F23E0C92D5FF33100A15447 /* CINETOOLS App Project */,
+				1F23E0D92D5FF33200A15447 /* CINETOOLS App ProjectTests */,
+				1F23E0E32D5FF33200A15447 /* CINETOOLS App ProjectUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1F23E0C82D5FF33100A15447 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1F23E0D82D5FF33200A15447 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1F23E0E22D5FF33200A15447 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1F23E0C62D5FF33100A15447 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1F23E0D62D5FF33200A15447 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1F23E0E02D5FF33200A15447 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1F23E0DC2D5FF33200A15447 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1F23E0C92D5FF33100A15447 /* CINETOOLS App Project */;
+			targetProxy = 1F23E0DB2D5FF33200A15447 /* PBXContainerItemProxy */;
+		};
+		1F23E0E62D5FF33200A15447 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1F23E0C92D5FF33100A15447 /* CINETOOLS App Project */;
+			targetProxy = 1F23E0E52D5FF33200A15447 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1F23E0EC2D5FF33200A15447 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		1F23E0ED2D5FF33200A15447 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		1F23E0EF2D5FF33200A15447 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"CINETOOLS App Project/Preview Content\"";
+				DEVELOPMENT_TEAM = 5DD7V83266;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.stevepmann.CINETOOLS-App-Project";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		1F23E0F02D5FF33200A15447 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"CINETOOLS App Project/Preview Content\"";
+				DEVELOPMENT_TEAM = 5DD7V83266;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.stevepmann.CINETOOLS-App-Project";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		1F23E0F22D5FF33200A15447 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5DD7V83266;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.stevepmann.CINETOOLS-App-ProjectTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CINETOOLS App Project.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CINETOOLS App Project";
+			};
+			name = Debug;
+		};
+		1F23E0F32D5FF33200A15447 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5DD7V83266;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.stevepmann.CINETOOLS-App-ProjectTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CINETOOLS App Project.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CINETOOLS App Project";
+			};
+			name = Release;
+		};
+		1F23E0F52D5FF33200A15447 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5DD7V83266;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.stevepmann.CINETOOLS-App-ProjectUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "CINETOOLS App Project";
+			};
+			name = Debug;
+		};
+		1F23E0F62D5FF33200A15447 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5DD7V83266;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.stevepmann.CINETOOLS-App-ProjectUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "CINETOOLS App Project";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1F23E0C52D5FF33100A15447 /* Build configuration list for PBXProject "CINETOOLS App Project" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1F23E0EC2D5FF33200A15447 /* Debug */,
+				1F23E0ED2D5FF33200A15447 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1F23E0EE2D5FF33200A15447 /* Build configuration list for PBXNativeTarget "CINETOOLS App Project" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1F23E0EF2D5FF33200A15447 /* Debug */,
+				1F23E0F02D5FF33200A15447 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1F23E0F12D5FF33200A15447 /* Build configuration list for PBXNativeTarget "CINETOOLS App ProjectTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1F23E0F22D5FF33200A15447 /* Debug */,
+				1F23E0F32D5FF33200A15447 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1F23E0F42D5FF33200A15447 /* Build configuration list for PBXNativeTarget "CINETOOLS App ProjectUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1F23E0F52D5FF33200A15447 /* Debug */,
+				1F23E0F62D5FF33200A15447 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1F23E0C22D5FF33100A15447 /* Project object */;
+}
