@@ -31,7 +31,7 @@ struct SupportPageView: View {
                                 VStack(spacing: 8) {
                                     Image(systemName: "plus.app")
                                         .font(.system(size: 32))
-                                        .foregroundStyle(.blue)
+                                        .foregroundStyle(.gray)
                                     
                                     Text("Request Addition")
                                         .font(.headline)
@@ -59,7 +59,7 @@ struct SupportPageView: View {
                                 VStack(spacing: 8) {
                                     Image(systemName: "envelope.fill")
                                         .font(.system(size: 32))
-                                        .foregroundStyle(.blue)
+                                        .foregroundStyle(.gray)
                                     
                                     Text("Get in Touch")
                                         .font(.headline)
@@ -80,14 +80,14 @@ struct SupportPageView: View {
                         // Rate App Card
                         ModernCard {
                             Button {
-                                if let url = URL(string: "https://apps.apple.com/app/id...") { // Add actual App Store ID
+                                if let url = URL(string: "https://apps.apple.com/us/app/go-game-connect/id6742568544") { // Add actual App Store ID
                                     UIApplication.shared.open(url)
                                 }
                             } label: {
                                 VStack(spacing: 8) {
                                     Image(systemName: "star.fill")
                                         .font(.system(size: 32))
-                                        .foregroundStyle(.yellow)
+                                        .foregroundStyle(.gray)
                                     
                                     Text("Rate the App")
                                         .font(.headline)
@@ -115,7 +115,7 @@ struct SupportPageView: View {
                                 VStack(spacing: 8) {
                                     Image(systemName: "camera.fill")
                                         .font(.system(size: 32))
-                                        .foregroundStyle(.pink)
+                                        .foregroundStyle(.gray)
                                     
                                     Text("Follow Us")
                                         .font(.headline)

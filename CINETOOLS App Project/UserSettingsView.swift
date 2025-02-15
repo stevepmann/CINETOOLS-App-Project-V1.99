@@ -1,32 +1,13 @@
 import SwiftUI
 
-class UserSettings: ObservableObject {
-    @Published var selectedBrand: Int
-    @Published var selectedModel: Int
-    @Published var selectedCodec: Int
-    @Published var selectedAccessories: Set<Int>
-    
-    init() {
-        self.selectedBrand = UserDefaults.standard.integer(forKey: "SelectedBrand")
-        self.selectedModel = UserDefaults.standard.integer(forKey: "SelectedModel")
-        self.selectedCodec = UserDefaults.standard.integer(forKey: "SelectedCodec")
-        self.selectedAccessories = Set(UserDefaults.standard.array(forKey: "SelectedAccessories") as? [Int] ?? [])
-    }
-    
-    func saveSettings() {
-        UserDefaults.standard.set(selectedBrand, forKey: "SelectedBrand")
-        UserDefaults.standard.set(selectedModel, forKey: "SelectedModel")
-        UserDefaults.standard.set(selectedCodec, forKey: "SelectedCodec")
-        UserDefaults.standard.set(Array(selectedAccessories), forKey: "SelectedAccessories")
-    }
-}
-
 struct UserSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var settings: UserSettings
     @State private var isSaved = false
     @State private var searchText = ""
     @State private var isSearching = false
+    @State private var isShowingNewSetupSheet = false
+    @State private var newSetupName = ""
     @FocusState private var isSearchFocused: Bool
     let cameras = CameraDatabase.shared.getCameraForDataCalc()
     let accessories = CameraDatabase.shared.getAccessories()
@@ -41,6 +22,20 @@ struct UserSettingsView: View {
         return min(settings.selectedModel, max(0, modelCount - 1))
     }
     
+    // Add these sorted indices properties
+    private var sortedBrandIndices: [Int] {
+        cameras.indices.sorted { 
+            cameras[$0].name.lowercased() < cameras[$1].name.lowercased() 
+        }
+    }
+    
+    private var sortedModelIndices: [Int] {
+        cameras[selectedBrand].models.indices.sorted {
+            cameras[selectedBrand].models[$0].name.lowercased() < 
+            cameras[selectedBrand].models[$1].name.lowercased()
+        }
+    }
+    
     // Add this computed property to filter results
     private var filteredResults: (cameras: [(brand: Int, model: Int)], accessories: [Int]) {
         if searchText.isEmpty {
@@ -49,7 +44,7 @@ struct UserSettingsView: View {
         
         let searchTerms = searchText.lowercased().split(separator: " ")
         
-        // Filter cameras
+        // Filter and sort cameras
         var matchingCameras: [(brand: Int, model: Int)] = []
         for (brandIndex, brand) in cameras.enumerated() {
             for (modelIndex, model) in brand.models.enumerated() {
@@ -60,10 +55,19 @@ struct UserSettingsView: View {
             }
         }
         
-        // Filter accessories
-        let matchingAccessories = accessories.enumerated().compactMap { index, accessory in
-            searchTerms.allSatisfy { accessory.name.lowercased().contains($0) } ? index : nil
+        // Sort matching cameras alphabetically
+        matchingCameras.sort { first, second in
+            let firstName = "\(cameras[first.brand].name) \(cameras[first.brand].models[first.model].name)".lowercased()
+            let secondName = "\(cameras[second.brand].name) \(cameras[second.brand].models[second.model].name)".lowercased()
+            return firstName < secondName
         }
+        
+        // Filter and sort accessories
+        let matchingAccessories = accessories.enumerated()
+            .compactMap { index, accessory in
+                searchTerms.allSatisfy { accessory.name.lowercased().contains($0) } ? index : nil
+            }
+            .sorted { accessories[$0].name.lowercased() < accessories[$1].name.lowercased() }
         
         return (matchingCameras, matchingAccessories)
     }
@@ -185,7 +189,7 @@ struct UserSettingsView: View {
                             Divider()
                             
                             Picker(selection: $settings.selectedBrand) {
-                                ForEach(0..<cameras.count, id: \.self) { index in
+                                ForEach(sortedBrandIndices, id: \.self) { index in
                                     Text(cameras[index].name).tag(index)
                                 }
                             } label: {
@@ -204,7 +208,7 @@ struct UserSettingsView: View {
                             Divider()
                             
                             Picker(selection: $settings.selectedModel) {
-                                ForEach(0..<cameras[selectedBrand].models.count, id: \.self) { index in
+                                ForEach(sortedModelIndices, id: \.self) { index in
                                     Text(cameras[selectedBrand].models[index].name).tag(index)
                                 }
                             } label: {
@@ -244,18 +248,66 @@ struct UserSettingsView: View {
                                     VStack(spacing: 12) {
                                         ForEach(accessories.indices, id: \.self) { index in
                                             if accessories[index].category == category {
-                                                ModernAccessoryToggle(
-                                                    accessory: accessories[index],
-                                                    isSelected: settings.selectedAccessories.contains(index),
-                                                    action: {
-                                                        if settings.selectedAccessories.contains(index) {
-                                                            settings.selectedAccessories.remove(index)
-                                                        } else {
-                                                            settings.selectedAccessories.insert(index)
+                                                VStack(alignment: .leading, spacing: 8) {
+                                                    ModernAccessoryToggle(
+                                                        accessory: accessories[index],
+                                                        isSelected: settings.selectedAccessories.contains(index),
+                                                        action: {
+                                                            if settings.selectedAccessories.contains(index) {
+                                                                settings.selectedAccessories.remove(index)
+                                                                if accessories[index].category == .focus {
+                                                                    settings.focusSystemQuantities.removeValue(forKey: index)
+                                                                }
+                                                            } else {
+                                                                settings.selectedAccessories.insert(index)
+                                                                if accessories[index].category == .focus {
+                                                                    settings.focusSystemQuantities[index] = 1
+                                                                }
+                                                            }
+                                                            settings.saveSettings()
                                                         }
-                                                        settings.saveSettings()
+                                                    )
+                                                    
+                                                    // Add quantity selector for focus systems
+                                                    if accessories[index].category == .focus && settings.selectedAccessories.contains(index) {
+                                                        HStack {
+                                                            Text("Quantity")
+                                                                .font(.subheadline)
+                                                                .foregroundColor(.secondary)
+                                                            
+                                                            Spacer()
+                                                            
+                                                            HStack(spacing: 12) {
+                                                                Button(action: {
+                                                                    if let current = settings.focusSystemQuantities[index], current > 1 {
+                                                                        settings.focusSystemQuantities[index] = current - 1
+                                                                        settings.saveSettings()
+                                                                    }
+                                                                }) {
+                                                                    Image(systemName: "minus.circle.fill")
+                                                                        .foregroundStyle(.gray)
+                                                                }
+                                                                
+                                                                Text("\(settings.focusSystemQuantities[index] ?? 1)")
+                                                                    .font(.headline)
+                                                                    .monospacedDigit()
+                                                                    .frame(minWidth: 30)
+                                                                
+                                                                Button(action: {
+                                                                    let current = settings.focusSystemQuantities[index] ?? 1
+                                                                    if current < 99 {
+                                                                        settings.focusSystemQuantities[index] = current + 1
+                                                                        settings.saveSettings()
+                                                                    }
+                                                                }) {
+                                                                    Image(systemName: "plus.circle.fill")
+                                                                        .foregroundStyle(.blue)
+                                                                }
+                                                            }
+                                                        }
+                                                        .padding(.leading, 36)
                                                     }
-                                                )
+                                                }
                                             }
                                         }
                                     }
@@ -302,19 +354,26 @@ struct UserSettingsView: View {
                             
                             // Only show peripherals section if accessories are selected
                             if !settings.selectedAccessories.isEmpty {
-                              
-                                
-                                // Peripherals List
                                 VStack(alignment: .leading, spacing: 8) {
-                                     ForEach(Array(settings.selectedAccessories).sorted(), id: \.self) { index in
-                                        HStack {
-                                            Text(accessories[index].name)
-                                                .font(.subheadline)
-                                            Spacer()
-                                            Text("\(String(format: "%.1f", accessories[index].powerDraw))W")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                                .monospacedDigit()
+                                    ForEach(Array(settings.selectedAccessories).sorted(), id: \.self) { index in
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            HStack {
+                                                Text(accessories[index].name)
+                                                    .font(.subheadline)
+                                                if accessories[index].category == .focus {
+                                                    Text("× \(settings.focusSystemQuantities[index] ?? 1)")
+                                                        .font(.subheadline)
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                                Spacer()
+                                                let powerDraw = accessories[index].powerDraw * 
+                                                    Double(accessories[index].category == .focus ? 
+                                                        settings.focusSystemQuantities[index] ?? 1 : 1)
+                                                Text("\(String(format: "%.1f", powerDraw))W")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                                    .monospacedDigit()
+                                            }
                                         }
                                     }
                                 }
@@ -328,7 +387,18 @@ struct UserSettingsView: View {
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Text("\(String(format: "%.1f", settings.selectedAccessories.reduce(cameras[selectedBrand].models[selectedModel].powerDraw) { $0 + accessories[$1].powerDraw }))W")
+                                let totalPower = settings.selectedAccessories.reduce(
+                                    cameras[selectedBrand].models[selectedModel].powerDraw
+                                ) { total, index in
+                                    let accessory = accessories[index]
+                                    if accessory.category == .focus {
+                                        return total + (accessory.powerDraw * 
+                                            Double(settings.focusSystemQuantities[index] ?? 1))
+                                    } else {
+                                        return total + accessory.powerDraw
+                                    }
+                                }
+                                Text("\(String(format: "%.1f", totalPower))W")
                                     .font(.subheadline)
                                     .foregroundStyle(.orange)
                                     .monospacedDigit()
@@ -337,45 +407,82 @@ struct UserSettingsView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Save Kit Bag Button
+                    // Saved Kit Bags Card (replaces old Save Kit Bag card)
                     ModernCard {
                         VStack(spacing: 16) {
-                            Button(action: {
-                                settings.saveSettings()
-                                withAnimation {
-                                    isSaved = true
+                            // Title and Add Button
+                            HStack {
+                                Label {
+                                    Text("Saved Setups")
+                                        .font(.title2)
+                                        .foregroundColor(.primary)
+                                } icon: {
+                                    Image(systemName: "folder.fill")
+                                        .foregroundStyle(.blue)
                                 }
-                                // Reset after delay
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                    withAnimation {
-                                        isSaved = false
-                                    }
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    isShowingNewSetupSheet = true
+                                }) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.blue)
                                 }
-                            }) {
-                                HStack {
-                                    if isSaved {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .font(.headline)
-                                        Text("Kit Bag Saved!")
-                                            .font(.headline)
-                                    } else {
-                                        Image(systemName: "square.and.arrow.down.fill")
-                                            .font(.headline)
-                                        Text("Save Your Kit Bag")
-                                            .font(.headline)
-                                    }
-                                }
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(isSaved ? Color.green : Color.accentColor)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             }
                             
-                            Text("Save your kit bag for next time, and it will be pre-selected when opening calculators")
+                            Divider()
+                            
+                            // Saved Setups List
+                            if settings.savedSetups.isEmpty {
+                                Text("No saved setups yet")
+                                    .foregroundStyle(.secondary)
+                                    .padding(.vertical)
+                            } else {
+                                ForEach(settings.savedSetups) { setup in
+                                    VStack {
+                                        HStack {
+                                            VStack(alignment: .leading) {
+                                                Text(setup.name)
+                                                    .font(.headline)
+                                                Text("\(cameras[setup.brand].name) \(cameras[setup.brand].models[setup.model].name)")
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            if setup.isActive {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundStyle(.green)
+                                            }
+                                            
+                                            Button(action: {
+                                                settings.deleteSetup(setup)
+                                            }) {
+                                                Image(systemName: "trash")
+                                                    .foregroundStyle(.red)
+                                            }
+                                            .padding(.leading)
+                                        }
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            settings.activateSetup(setup)
+                                        }
+                                        
+                                        if setup.id != settings.savedSetups.last?.id {
+                                            Divider()
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            Text("Save your most used setups for next time, by making your selections above, then hitting the plus symbol and saving your setup. It will then be pre-selected when opening calculators")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
+                                .padding(.top, 8)
                         }
                         .padding(8)
                     }
@@ -401,7 +508,7 @@ struct UserSettingsView: View {
                 .padding(.vertical)
             }
             
-            // Floating back button remains unchanged
+            // Floating back button
             VStack {
                 HStack {
                     Button(action: {
@@ -425,10 +532,38 @@ struct UserSettingsView: View {
             }
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $isShowingNewSetupSheet) {
+            NavigationStack {
+                Form {
+                    Section {
+                        TextField("Setup Name", text: $newSetupName)
+                    }
+                }
+                .navigationTitle("New Setup")
+                .navigationBarItems(
+                    leading: Button("Cancel") {
+                        isShowingNewSetupSheet = false
+                        newSetupName = ""
+                    },
+                    trailing: Button("Save") {
+                        if !newSetupName.isEmpty {
+                            settings.saveCurrentSetup(name: newSetupName)
+                            isShowingNewSetupSheet = false
+                            newSetupName = ""
+                        }
+                    }
+                    .disabled(newSetupName.isEmpty)
+                )
+            }
+            .presentationDetents([.height(200)])
+        }
     }
 }
 
 #Preview {
-    UserSettingsView()
-        .environmentObject(UserSettings())
+    let settings = UserSettings()
+    NavigationStack {
+        UserSettingsView()
+            .environmentObject(settings)
+    }
 } 

@@ -10,11 +10,13 @@ struct AdvancedBatteryCalculatorView: View {
     let initialModel: Int
     let initialBattery: Int
     let initialAccessories: Set<Int>
+    let initialBatteryQuantity: Int
     
     @State private var selectedBrand: Int
     @State private var selectedModel: Int
     @State private var selectedBattery: Int
     @State private var selectedAccessories: Set<Int>
+    @State private var batteryQuantity: Int
     @State private var ambientTemperature = 20.0 // Default 20°C
     @State private var batteryAge = 1.0 // Default 1 year
     
@@ -23,20 +25,29 @@ struct AdvancedBatteryCalculatorView: View {
     let batteries = [
         Battery(model: "98Wh", wattHours: 98, voltage: 14.8),
         Battery(model: "150Wh", wattHours: 150, voltage: 14.8),
-        // ... existing batteries ...
+        Battery(model: "11Wh (Canon LP-E6)", wattHours: 11, voltage: 7.4),
+        Battery(model: "28Wh (BP-U30)", wattHours: 28, voltage: 14.8),
+        Battery(model: "36Wh (Nikon EN-EL18d)", wattHours: 28, voltage: 10.8),
+        Battery(model: "50Wh", wattHours: 50, voltage: 14.8),
+        Battery(model: "56Wh (BP-U60)", wattHours: 50, voltage: 14.8),
+        Battery(model: "240Wh", wattHours: 240, voltage: 14.8),
+        Battery(model: "290Wh", wattHours: 290, voltage: 14.8),
+        Battery(model: "420Wh", wattHours: 420, voltage: 14.8)
     ]
     
     // Update init to accept and use the passed values
-    init(brand: Int, model: Int, battery: Int, accessories: Set<Int>) {
+    init(brand: Int, model: Int, battery: Int, accessories: Set<Int>, batteryQuantity: Int) {
         initialBrand = brand
         initialModel = model
         initialBattery = battery
         initialAccessories = accessories
+        initialBatteryQuantity = batteryQuantity
         
         _selectedBrand = State(initialValue: brand)
         _selectedModel = State(initialValue: model)
         _selectedBattery = State(initialValue: battery)
         _selectedAccessories = State(initialValue: accessories)
+        _batteryQuantity = State(initialValue: batteryQuantity)
     }
     
     // Temperature efficiency factor (simplified model)
@@ -75,7 +86,7 @@ struct AdvancedBatteryCalculatorView: View {
         let battery = batteries[selectedBattery]
         let baseEfficiency = 0.90 // Base Li-ion efficiency
         let totalEfficiency = baseEfficiency * temperatureEfficiencyFactor * ageEfficiencyFactor
-        let effectiveWattHours = battery.wattHours * totalEfficiency
+        let effectiveWattHours = battery.wattHours * totalEfficiency * Double(batteryQuantity)
         return effectiveWattHours / totalPowerDraw
     }
     
@@ -92,6 +103,21 @@ struct AdvancedBatteryCalculatorView: View {
                             .fontWeight(.bold)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.horizontal)
+                        
+                        // Add the explanation card
+                        ModernCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Label("About Runtime Calculations", systemImage: "info.circle")
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                
+                                Text("The basic runtime estimate includes a standard 90% battery efficiency factor. This advanced calculator provides more accurate calculations by considering additional factors such as ambient temperature and battery age.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(4)
+                        }
+                        .padding(.horizontal)
                         
                         // Camera and Accessories sections (similar to basic calculator)
                         // ... existing camera and accessories sections ...
@@ -170,6 +196,14 @@ struct AdvancedBatteryCalculatorView: View {
                                     .foregroundStyle(.secondary)
                                     .monospacedDigit()
                                 
+                                // Add per-battery information when multiple batteries are selected
+                                if batteryQuantity > 1 {
+                                    Text("(\(String(format: "%.1f", runtime / Double(batteryQuantity))) hours per battery)")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .monospacedDigit()
+                                }
+                                
                                 Divider()
                                 
                                 VStack(alignment: .leading, spacing: 8) {
@@ -181,6 +215,10 @@ struct AdvancedBatteryCalculatorView: View {
                                     Text("• Battery Age: \(Int(ageEfficiencyFactor * 100))%")
                                     Text("• Base Efficiency: 90%")
                                     Text("• Total Efficiency: \(Int(temperatureEfficiencyFactor * ageEfficiencyFactor * 0.9 * 100))%")
+                                    
+                                    if batteryQuantity > 1 {
+                                        Text("• Total Battery Capacity: \(String(format: "%.1f", batteries[selectedBattery].wattHours * Double(batteryQuantity)))Wh")
+                                    }
                                 }
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -223,6 +261,30 @@ struct AdvancedBatteryCalculatorView: View {
 }
 
 #Preview {
-    AdvancedBatteryCalculatorView(brand: 0, model: 0, battery: 0, accessories: [])
-        .environmentObject(UserSettings())
+    let settings = UserSettings()
+    let cameras = CameraDatabase.shared.getCameraForDataCalc()
+    let accessories = CameraDatabase.shared.getAccessories()
+    let batteries = [
+        Battery(model: "98Wh", wattHours: 98, voltage: 14.8),
+        Battery(model: "150Wh", wattHours: 150, voltage: 14.8),
+        Battery(model: "11Wh (Canon LP-E6)", wattHours: 11, voltage: 7.4),
+        Battery(model: "28Wh (BP-U30)", wattHours: 28, voltage: 14.8),
+        Battery(model: "36Wh (Nikon EN-EL18d)", wattHours: 28, voltage: 10.8),
+        Battery(model: "50Wh", wattHours: 50, voltage: 14.8),
+        Battery(model: "56Wh (BP-U60)", wattHours: 50, voltage: 14.8),
+        Battery(model: "240Wh", wattHours: 240, voltage: 14.8),
+        Battery(model: "290Wh", wattHours: 290, voltage: 14.8),
+        Battery(model: "420Wh", wattHours: 420, voltage: 14.8)
+    ]
+    
+    NavigationStack {
+        AdvancedBatteryCalculatorView(
+            brand: 0,  // Index instead of CameraData
+            model: 0,  // Index instead of CameraModel
+            battery: 0,  // Index for battery
+            accessories: [],
+            batteryQuantity: 1  // Add this parameter
+        )
+        .environmentObject(settings)
+    }
 } 

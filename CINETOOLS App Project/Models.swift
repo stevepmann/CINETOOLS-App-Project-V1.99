@@ -33,7 +33,7 @@ enum AccessoryCategory: String, CaseIterable {
     case monitor = "Monitors"
     case wireless = "Wireless Video"
     case focus = "Focus Systems"
-    case assorted = "Assorted"
+    case audio = "Audio"
 }
 
 struct Accessory {

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import Combine
 
 // First, let's create a separate view for the runtime display
 struct RuntimeDisplayCard: View {
@@ -52,111 +53,221 @@ struct RuntimeDisplayCard: View {
 
 // Create a separate view for the accessories section
 struct AccessoriesSection: View {
-    let accessories: [Accessory]
     @Binding var selectedAccessories: Set<Int>
-    let totalAccessoryPowerDraw: Double
+    @Binding var focusSystemQuantities: [Int: Int]
+    @EnvironmentObject var settings: UserSettings
+    let accessories: [Accessory]
+    // Accessory indices sorted A–Z by name (keeps original indices so saved selections still match)
+    private var sortedAccessoryIndices: [Int] {
+        accessories.indices.sorted {
+            accessories[$0].name.localizedCaseInsensitiveCompare(accessories[$1].name) == .orderedAscending
+        }
+    }
     
     var body: some View {
-        ModernCard {
-            VStack(spacing: 12) {
-                // Header
-                Label {
-                    Text("Accessories")
-                        .font(.title2)
-                        .foregroundColor(.primary)
-                } icon: {
-                    Image(systemName: "gearshape.fill")
-                        .foregroundStyle(.primary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Divider()
-                
-                // Categories
-                ForEach(AccessoryCategory.allCases, id: \.self) { category in
-                    DisclosureGroup {
-                        VStack(spacing: 12) {
-                            ForEach(accessories.indices, id: \.self) { index in
-                                if accessories[index].category == category {
+        VStack(spacing: 12) {
+            ForEach(AccessoryCategory.allCases, id: \.self) { category in
+                DisclosureGroup {
+                    VStack(spacing: 12) {
+                        ForEach(sortedAccessoryIndices, id: \.self) { index in
+                            if accessories[index].category == category {
+                                VStack(alignment: .leading, spacing: 8) {
                                     ModernAccessoryToggle(
                                         accessory: accessories[index],
                                         isSelected: selectedAccessories.contains(index),
                                         action: {
                                             if selectedAccessories.contains(index) {
                                                 selectedAccessories.remove(index)
+                                                if accessories[index].category == .focus {
+                                                    focusSystemQuantities.removeValue(forKey: index)
+                                                }
                                             } else {
                                                 selectedAccessories.insert(index)
+                                                if accessories[index].category == .focus {
+                                                    focusSystemQuantities[index] = settings.focusSystemQuantities[index] ?? 1
+                                                }
                                             }
                                         }
                                     )
+                                    
+                                    if accessories[index].category == .focus && selectedAccessories.contains(index) {
+                                        HStack {
+                                            Text("Quantity")
+                                                .font(.subheadline)
+                                                .foregroundColor(.secondary)
+                                            
+                                            Spacer()
+                                            
+                                            HStack(spacing: 12) {
+                                                Button(action: {
+                                                    if let current = focusSystemQuantities[index] ?? settings.focusSystemQuantities[index], current > 1 {
+                                                        focusSystemQuantities[index] = current - 1
+                                                    }
+                                                }) {
+                                                    Image(systemName: "minus.circle.fill")
+                                                        .foregroundStyle(.gray)
+                                                }
+                                                
+                                                Text("\(focusSystemQuantities[index] ?? settings.focusSystemQuantities[index] ?? 1)")
+                                                    .font(.headline)
+                                                    .monospacedDigit()
+                                                    .frame(minWidth: 30)
+                                                
+                                                Button(action: {
+                                                    let current = focusSystemQuantities[index] ?? settings.focusSystemQuantities[index] ?? 1
+                                                    if current < 99 {
+                                                        focusSystemQuantities[index] = current + 1
+                                                    }
+                                                }) {
+                                                    Image(systemName: "plus.circle.fill")
+                                                        .foregroundStyle(.blue)
+                                                }
+                                            }
+                                        }
+                                        .padding(.leading, 36)
+                                    }
                                 }
                             }
                         }
-                        .padding(.vertical, 2)
-                    } label: {
-                        Text(category.rawValue)
-                            .font(.headline)
-                            .foregroundColor(.primary)
                     }
+                    .padding(.vertical, 2)
+                } label: {
+                    Text(category.rawValue)
+                        .font(.headline)
+                        .foregroundColor(.primary)
                 }
                 
-                if !selectedAccessories.isEmpty {
+                if category != AccessoryCategory.allCases.last {
                     Divider()
-                    PowerDrawRow(
-                        value: totalAccessoryPowerDraw,
-                        label: "Total Accessories",
-                        icon: "bolt.fill",
-                        color: .orange
-                    )
                 }
             }
         }
     }
 }
 
-struct ContentView: View {
+struct BatteryCalculatorView: View {
     @EnvironmentObject var settings: UserSettings
     @Environment(\.dismiss) private var dismiss
     
-    @State private var selectedBrand: Int
-    @State private var selectedModel: Int
+    @State private var currentBrand: Int
+    @State private var currentModel: Int
+    @State private var currentAccessories: Set<Int>
     @State private var selectedBattery = 0
-    @State private var selectedAccessories: Set<Int>
+    @State private var batteryQuantity = 1
     
-    // Get data from CameraDatabase
+    // Add state to track if we're just navigating pickers
+    @State private var isNavigatingPicker = false
+    
+    // Add a state to track if we're navigating to advanced calculator
+    @State private var isNavigatingToAdvanced = false
+    
+    // Add a state to track if we're in a picker view
+    @State private var isInPickerView = false
+    
+    // Add a state to track if we're actually leaving the view
+    @State private var isLeavingView = false
+    
+    // Add local state for focus system quantities
+    @State private var localFocusSystemQuantities: [Int: Int] = [:]
+    
     let cameraBrands = CameraDatabase.shared.getCameraForBatteryCalc()
     let accessories = CameraDatabase.shared.getAccessories()
     let batteries = [
         Battery(model: "98Wh", wattHours: 98, voltage: 14.8),
         Battery(model: "150Wh", wattHours: 150, voltage: 14.8),
         Battery(model: "11Wh (Canon LP-E6)", wattHours: 11, voltage: 7.4),
+        Battery(model: "16Wh (Nikon EN-EL15c Nikon ZR)", wattHours: 16, voltage: 7.2),
+        Battery(model: "16.4Wh (NP-FZ100 Sony A7iii, FX30)", wattHours: 16.4, voltage: 7.2),
         Battery(model: "28Wh (BP-U30)", wattHours: 28, voltage: 14.8),
         Battery(model: "36Wh (Nikon EN-EL18d)", wattHours: 28, voltage: 10.8),
         Battery(model: "50Wh", wattHours: 50, voltage: 14.8),
         Battery(model: "56Wh (BP-U60)", wattHours: 50, voltage: 14.8),
+        Battery(model: "95W Hawkwoods SA-95 Smart Audio Battery", wattHours: 95, voltage: 14.4),
+        Battery(model: "97.58Wh (DJI TB50 Ronin 2, 4D)", wattHours: 98, voltage: 14.8),
         Battery(model: "240Wh", wattHours: 240, voltage: 14.8),
         Battery(model: "290Wh", wattHours: 290, voltage: 14.8),
-        Battery(model: "420Wh", wattHours: 420, voltage: 14.8)
+        Battery(model: "420Wh", wattHours: 420, voltage: 14.8),
+        Battery(model: "1200Wh (BeBob CUBE 1200)", wattHours: 1200, voltage: 14.8),
+        Battery(model: "1600Wh (Anton Bauer VCLX)", wattHours: 1600, voltage: 14.8)
     ]
     
-    // Initialize with settings from EnvironmentObject
-    init() {
-        _selectedBrand = State(initialValue: 0)
-        _selectedModel = State(initialValue: 0)
-        _selectedAccessories = State(initialValue: Set<Int>())
+    // Add computed properties for safe indices
+    private var safeBrand: Int {
+        min(currentBrand, max(0, cameraBrands.count - 1))
     }
     
+    private var safeModel: Int {
+        min(currentModel, max(0, cameraBrands[safeBrand].models.count - 1))
+    }
+    
+    // Update computed properties to use safe indices
     private var totalPowerDraw: Double {
-        let cameraDraw = cameraBrands[selectedBrand].models[selectedModel].powerDraw
-        let accessoriesDraw = selectedAccessories.reduce(0.0) { total, index in
-            total + accessories[index].powerDraw
+        let cameraDraw = cameraBrands[safeBrand].models[safeModel].powerDraw
+        let accessoriesDraw = currentAccessories.reduce(0.0) { total, index in
+            guard index < accessories.count else { return total }
+            let accessory = accessories[index]
+            if accessory.category == .focus {
+                let quantity = localFocusSystemQuantities[index] ?? settings.focusSystemQuantities[index] ?? 1
+                return total + (accessory.powerDraw * Double(quantity))
+            } else {
+                return total + accessory.powerDraw
+            }
         }
         return cameraDraw + accessoriesDraw
     }
     
     private var runtime: Double {
         let battery = batteries[selectedBattery]
-        return (battery.wattHours * 0.90) / totalPowerDraw
+        return (battery.wattHours * 0.90 * Double(batteryQuantity)) / totalPowerDraw
+    }
+    
+    // Keep only these working sorted indices
+    private var sortedBrandIndices: [Int] {
+        let indices = cameraBrands.indices.sorted { 
+            cameraBrands[$0].name.lowercased() < cameraBrands[$1].name.lowercased() 
+        }
+        return indices
+    }
+    
+    private var sortedModelIndices: [Int] {
+        let indices = cameraBrands[safeBrand].models.indices.sorted {
+            cameraBrands[safeBrand].models[$0].model.lowercased() < 
+            cameraBrands[safeBrand].models[$1].model.lowercased()
+        }
+        return indices
+    }
+    
+    init(
+        currentBrand: Int? = nil,
+        currentModel: Int? = nil,
+        currentAccessories: Set<Int>? = nil
+    ) {
+        let settings = UserSettings()
+        let cameras = CameraDatabase.shared.getCameraForBatteryCalc()
+        
+        // Validate brand index
+        var brand = currentBrand ?? settings.selectedBrand
+        if brand >= cameras.count {
+            brand = 0
+        }
+        
+        // Validate model index
+        var model = currentModel ?? settings.selectedModel
+        if model >= cameras[brand].models.count {
+            model = 0
+        }
+        
+        // Validate accessories
+        let validAccessories = (currentAccessories ?? settings.selectedAccessories).filter { 
+            $0 < CameraDatabase.shared.getAccessories().count 
+        }
+        
+        _currentBrand = State(initialValue: brand)
+        _currentModel = State(initialValue: model)
+        _currentAccessories = State(initialValue: validAccessories)
+        
+        // Initialize local quantities as empty - we'll fall back to settings values
+        _localFocusSystemQuantities = State(initialValue: [:])
     }
     
     var body: some View {
@@ -167,114 +278,165 @@ struct ContentView: View {
                 
                 ScrollView {
                     VStack(spacing: 24) {
-                        LazyVStack(spacing: 20) {
-                            Spacer()
-                                .frame(height: 16)  // Add space at the top
-                            
-                            // Title
-                            Text("Camera Rig Runtime Calculator")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.horizontal)
-                            
-                            
-                            // Camera Section
-                            ModernCard {
-                                VStack(spacing: 12) {
-                                    Picker(selection: $selectedBrand) {
-                                        ForEach(0..<cameraBrands.count, id: \.self) { index in
-                                            Text(cameraBrands[index].name).tag(index)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Label {
-                                                Text("Brand")
-                                                    .font(.headline)
-                                                    .foregroundColor(.primary)
-                                            } icon: {
-                                                Image(systemName: "camera.fill")
-                                                    .foregroundStyle(.green)
-                                            }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary.opacity(0.7))
-                                        }
+                        Spacer()
+                            .frame(height: 22)  // Add space at the top
+                        
+                        // Title
+                        Text("Camera Rig Runtime Calculator")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.horizontal)
+                        
+                        // Camera Section
+                        ModernCard {
+                            VStack(spacing: 12) {
+                                Picker(selection: $currentBrand) {
+                                    ForEach(sortedBrandIndices, id: \.self) { index in
+                                        Text(cameraBrands[index].name).tag(index)
                                     }
-                                    .pickerStyle(.navigationLink)
-                                    
-                                    Divider()
-                                    
-                                    Picker(selection: $selectedModel) {
-                                        ForEach(0..<cameraBrands[selectedBrand].models.count, id: \.self) { index in
-                                            Text(cameraBrands[selectedBrand].models[index].model).tag(index)
+                                } label: {
+                                    HStack {
+                                        Label {
+                                            Text("Brand")
+                                                .font(.headline)
+                                                .foregroundColor(.primary)
+                                        } icon: {
+                                            Image(systemName: "camera.fill")
+                                                .foregroundStyle(.green)
                                         }
-                                    } label: {
-                                        HStack {
-                                            Label {
-                                                Text("Model")
-                                                    .font(.headline)
-                                                    .foregroundColor(.primary)
-                                            } icon: {
-                                                Image(systemName: "video.fill")
-                                                    .foregroundStyle(.green)
-                                            }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary.opacity(0.7))
-                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary.opacity(0.7))
                                     }
-                                    .pickerStyle(.navigationLink)
-
-                                    Divider()
-                                    
-                                    PowerDrawRow(
-                                        value: cameraBrands[selectedBrand].models[selectedModel].powerDraw,
-                                        icon: "bolt.fill",
-                                        color: .orange
-                                    )
                                 }
-                            }
-                            
-                           // Accessories Section
-                            Section {
-                                AccessoriesSection(
-                                    accessories: accessories,
-                                    selectedAccessories: $selectedAccessories,
-                                    totalAccessoryPowerDraw: totalPowerDraw - cameraBrands[selectedBrand].models[selectedModel].powerDraw
+                                .pickerStyle(.navigationLink)
+                                .onAppear { isInPickerView = true }
+                                .onDisappear { isInPickerView = false }
+                                
+                                Divider()
+                                
+                                Picker(selection: $currentModel) {
+                                    ForEach(sortedModelIndices, id: \.self) { index in
+                                        Text(cameraBrands[currentBrand].models[index].model).tag(index)
+                                    }
+                                } label: {
+                                    HStack {
+                                        Label {
+                                            Text("Model")
+                                                .font(.headline)
+                                                .foregroundColor(.primary)
+                                        } icon: {
+                                            Image(systemName: "video.fill")
+                                                .foregroundStyle(.green)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary.opacity(0.7))
+                                    }
+                                }
+                                .pickerStyle(.navigationLink)
+                                .onAppear { isInPickerView = true }
+                                .onDisappear { isInPickerView = false }
+
+                                Divider()
+                                
+                                PowerDrawRow(
+                                    value: cameraBrands[safeBrand].models[safeModel].powerDraw,
+                                    icon: "bolt.fill",
+                                    color: .orange
                                 )
                             }
-                            
-                            // Battery Section
-                            Section {
-                                ModernCard {
-                                    Picker(selection: $selectedBattery) {
-                                        ForEach(0..<batteries.count, id: \.self) { index in
-                                            Text(batteries[index].model).tag(index)
+                        }
+                        
+                        // Accessories Section
+                        ModernCard {
+                            AccessoriesSection(
+                                selectedAccessories: $currentAccessories,
+                                focusSystemQuantities: $localFocusSystemQuantities,
+                                accessories: accessories
+                            )
+                        }
+                        
+                        // Battery Section
+                        ModernCard {
+                            VStack(spacing: 12) {
+                                Picker(selection: $selectedBattery) {
+                                    ForEach(0..<batteries.count, id: \.self) { index in
+                                        Text(batteries[index].model).tag(index)
+                                    }
+                                } label: {
+                                    HStack {
+                                        Label {
+                                            Text("Battery Capacity")
+                                                .font(.title2)
+                                                .foregroundColor(.primary)
+                                        } icon: {
+                                            Text("🔋")
+                                                .font(.title3)
                                         }
-                                    } label: {
-                                        HStack {
-                                            Label {
-                                                Text("Battery Capacity")
-                                                    .font(.title2)
-                                                    .foregroundColor(.primary)
-                                            } icon: {
-                                                Text("🔋")
-                                                    .font(.title3)
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary.opacity(0.7))
+                                    }
+                                }
+                                .pickerStyle(.navigationLink)
+                                
+                                Divider()
+                                
+                                // Update the battery quantity section
+                                HStack {
+                                    Text("Number of Batteries")
+                                        .font(.title3)  // Slightly smaller than .title2 used above
+                                        .foregroundColor(.primary)
+                                    
+                                    Spacer()
+                                    
+                                    HStack(spacing: 20) {
+                                        Button(action: {
+                                            if batteryQuantity > 1 {
+                                                batteryQuantity -= 1
                                             }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary.opacity(0.7))
+                                        }) {
+                                            Image(systemName: "minus.circle.fill")
+                                                .foregroundStyle(.secondary)
+                                                .font(.title2)
+                                        }
+                                        
+                                        Text("\(batteryQuantity)")
+                                            .font(.headline)
+                                            .monospacedDigit()
+                                            .frame(minWidth: 30)
+                                        
+                                        Button(action: {
+                                            if batteryQuantity < 20 {
+                                                batteryQuantity += 1
+                                            }
+                                        }) {
+                                            Image(systemName: "plus.circle.fill")
+                                                .foregroundStyle(.secondary)
+                                                .font(.title2)
                                         }
                                     }
-                                    .pickerStyle(.navigationLink)
                                 }
+                                
+                                // Add total capacity display
+                                HStack {
+                                    Text("Total Battery Capacity")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Text("\(String(format: "%.1f", batteries[selectedBattery].wattHours * Double(batteryQuantity)))Wh")
+                                        .font(.subheadline)
+                                        .monospacedDigit()
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.top, 4)
                             }
                         }
-                        .padding(.horizontal)
                         
                         // Runtime Display
                         ModernCard {
@@ -299,6 +461,14 @@ struct ContentView: View {
                                     .foregroundStyle(.secondary)
                                     .monospacedDigit()
                                 
+                                // Add per-battery information when multiple batteries are selected
+                                if batteryQuantity > 1 {
+                                    Text("(\(String(format: "%.1f", runtime / Double(batteryQuantity))) hours per battery)")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .monospacedDigit()
+                                }
+                                
                                 HStack {
                                     Label("\(String(format: "%.1f", totalPowerDraw))W", systemImage: "bolt.fill")
                                         .foregroundStyle(.orange)
@@ -309,57 +479,64 @@ struct ContentView: View {
                                 
                                 Divider()
                                 
-                                DisclosureGroup {
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text("The runtime estimate includes a standard 90% battery efficiency factor. For more accurate calculations considering ambient temperature and battery age;")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                       
-                                        NavigationLink(destination: AdvancedBatteryCalculatorView(
-                                            brand: selectedBrand,
-                                            model: selectedModel,
-                                            battery: selectedBattery,
-                                            accessories: selectedAccessories
-                                        )) {
-                                            Text("See Advanced Calculator")
-                                                .font(.subheadline)
-                                                .foregroundStyle(.blue)
+                                // First, create the destination view
+                                let advancedView = AdvancedBatteryCalculatorView(
+                                    brand: currentBrand,
+                                    model: currentModel,
+                                    battery: selectedBattery,
+                                    accessories: currentAccessories,
+                                    batteryQuantity: batteryQuantity
+                                )
+
+                                // Then create the navigation link with modifiers
+                                NavigationLink {
+                                    advancedView
+                                        .onAppear {
+                                            isNavigatingToAdvanced = true
                                         }
-                                        .padding(.top, 4)
-                                    }
-                                    .padding(.vertical, 8)
+                                        .onDisappear {
+                                            isNavigatingToAdvanced = false
+                                        }
                                 } label: {
-                                    Label("Advanced Runtime Calculation", systemImage: "info.circle")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.gray)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack {
+                                            Label {
+                                                Text("Advanced Runtime Calculator")
+                                                    .foregroundColor(.primary)
+                                            } icon: {
+                                                Image(systemName: "arrow.right.circle.fill")
+                                                    .foregroundStyle(.orange)
+                                            }
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary.opacity(0.7))
+                                        }
+                                        
+                                     
+                                    }
                                 }
+                                .padding(.vertical, 8)
                             }
                             .padding(20)
                         }
-                        .padding(.horizontal)
                         
-                        // Support Section (without ModernCard)
+                        // Support Section
                         VStack(spacing: 16) {
                             Link("Request Camera/Accessory Addition",
                                  destination: URL(string: "mailto:app@stevepmann.com")!)
                                 .font(.subheadline)
                         }
                         .padding(10)
-                        .padding(.horizontal)
                     }
-                    .padding(.vertical)
-                  
-                    VStack(spacing: 1) {
-                        Image("-headerlogo-")
-                            .resizable()
-                            .frame(width: 300, height: 100)
-                    }
+                    .padding(.horizontal)
                 }
                 
-                // Add floating back button
+                // Update the floating back button
                 VStack {
                     HStack {
                         Button(action: {
+                            isLeavingView = true  // Set this flag before dismissing
                             dismiss()
                         }) {
                             Image(systemName: "chevron.left")
@@ -373,18 +550,68 @@ struct ContentView: View {
                         .padding(.leading, 20)
                         
                         Spacer()
-                        
                     }
                     .padding(.top, 8)
                     
                     Spacer()
-                    
                 }
-                
             }
             .navigationBarHidden(true)
         }
-        
+        .onAppear {
+            if !isNavigatingPicker && !isInPickerView {
+                currentBrand = settings.batteryCalcBrand
+                currentModel = settings.batteryCalcModel
+                currentAccessories = settings.batteryCalcAccessories
+            }
+        }
+        .onDisappear {
+            // Reset when actually leaving the view (using back button)
+            if isLeavingView {
+                settings.resetCalculatorStates()
+            }
+        }
+        // Update the onChange handlers
+        .onChange(of: currentBrand) { newValue in
+            // Only set navigating state if we're actually in the picker
+            if isInPickerView {
+                isNavigatingPicker = true
+            }
+            // Validate brand change
+            if newValue >= cameraBrands.count {
+                currentBrand = 0
+            }
+            // Reset model when brand changes
+            currentModel = 0
+            settings.batteryCalcBrand = currentBrand
+            settings.batteryCalcModel = currentModel
+        }
+        .onChange(of: currentModel) { newValue in
+            // Only set navigating state if we're actually in the picker
+            if isInPickerView {
+                isNavigatingPicker = true
+            }
+            // Validate model change
+            if newValue >= cameraBrands[safeBrand].models.count {
+                currentModel = 0
+            }
+            settings.batteryCalcModel = currentModel
+        }
+        // Update the task modifier
+        .task {
+            // Only reset navigation state if we were actually in a picker
+            if isNavigatingPicker && !isInPickerView {
+                isNavigatingPicker = false
+            }
+        }
+        // Update the battery picker onChange handler
+        .onChange(of: selectedBattery) { newValue in
+            isNavigatingPicker = true
+            // Validate battery selection
+            if newValue >= batteries.count {
+                selectedBattery = 0
+            }
+        }
     }
 }
 
@@ -517,17 +744,9 @@ struct AccessoryToggleRow: View {
 }
 
 // Add a preview provider with proper environment object
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-            .environmentObject(UserSettings())
-    }
-}
-
-// Or using the new macro syntax:
 #Preview {
     NavigationStack {
-        ContentView()
+        BatteryCalculatorView()
             .environmentObject(UserSettings())
     }
 }

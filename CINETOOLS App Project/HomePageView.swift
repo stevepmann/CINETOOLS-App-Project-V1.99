@@ -31,7 +31,8 @@ struct HomePageView: View {
                         VStack(spacing: 16) {
                             // Battery Calculator
                             
-                            NavigationLink(destination: ContentView()) {
+                            NavigationLink(destination: BatteryCalculatorView()
+                                .environmentObject(settings)) {
                                 ModernCard {
                                     HStack(spacing: 16) {
                                         Image(systemName: "battery.100.bolt")
@@ -61,7 +62,8 @@ struct HomePageView: View {
                             }
                             
                             // Data Calculator
-                            NavigationLink(destination: DataCalculatorView()) {
+                            NavigationLink(destination: DataCalculatorView()
+                                .environmentObject(settings)) {
                                 ModernCard {
                                     HStack(spacing: 10) {
                                         Image(systemName: "internaldrive.fill")
@@ -99,7 +101,7 @@ struct HomePageView: View {
                                     HStack(spacing: 10) {
                                         Image(systemName: "cable.connector.horizontal")
                                             .font(.system(size: 28))
-                                            .foregroundStyle(.blue)
+                                            .foregroundStyle(.gray)
                                             .frame(width: 40)
                                         
                                         VStack(alignment: .leading, spacing: 4) {
@@ -152,7 +154,7 @@ struct HomePageView: View {
                                             .font(.headline)
                                             .foregroundColor(.primary)
                                         
-                                        Text("Save your setup")
+                                        Text("Save your setup for fast access in the calculators")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                             .multilineTextAlignment(.center)

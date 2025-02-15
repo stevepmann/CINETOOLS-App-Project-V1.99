@@ -1,0 +1,37 @@
+{
+  "configurations" : [
+    {
+      "id" : "08D8ABAB-CB0C-446F-BA46-698D335621FC",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:CINETOOLS App Project.xcodeproj",
+      "identifier" : "1F23E0C92D5FF33100A15447",
+      "name" : "CINETOOLS App Project"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:CINETOOLS App Project.xcodeproj",
+        "identifier" : "1F23E0D92D5FF33200A15447",
+        "name" : "CINETOOLS App ProjectTests"
+      }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:CINETOOLS App Project.xcodeproj",
+        "identifier" : "1F23E0E32D5FF33200A15447",
+        "name" : "CINETOOLS App ProjectUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
