@@ -105,7 +105,7 @@ class CameraDatabase {
                 CodecData(name: "ProRes 4444 XQ 25fps", bitrate: 1858),
                 CodecData(name: "ProRes 4444 25fps", bitrate: 1239),
                 CodecData(name: "ProRes 422 HQ 25fps", bitrate: 826),
-                CodecData(name: "ProRes 422 25fps", bitrate: 551),
+                CodecData(name: "ProRes 422 4K UHD 25fps", bitrate: 551),
                 CodecData(name: "ARRIRAW 2.8K 25fps", bitrate: 1400),
                 CodecData(name: "ARRIRAW OG 3.4K 25fps", bitrate: 2262)
             ]),
