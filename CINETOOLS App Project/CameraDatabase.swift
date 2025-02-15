@@ -199,6 +199,7 @@ class CameraDatabase {
     let accessories: [Accessory] = [
         // Monitors
         Accessory(name: "Atomos Ninja V 5''", powerDraw: 20, category: .monitor),
+        Accessory(name: "Feelworld F6 Plus", powerDraw: 9, category: .monitor),
         Accessory(name: "Portkeys PT5 II 5''", powerDraw: 7, category: .monitor),
         Accessory(name: "SmallHD Cine 5''", powerDraw: 19, category: .monitor),
         Accessory(name: "SmallHD Cine 7''", powerDraw: 20, category: .monitor),

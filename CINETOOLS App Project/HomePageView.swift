@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HomePageView: View {
-    @EnvironmentObject var settings: UserSettings
+    @StateObject var settings = UserSettings()
     
     var body: some View {
         NavigationStack {
@@ -138,7 +138,10 @@ struct HomePageView: View {
                             GridItem(.flexible(), spacing: 16)
                         ], spacing: 16) {
                             // User Settings Card
-                            NavigationLink(destination: UserSettingsView()) {
+                            NavigationLink {
+                                UserSettingsView()
+                                    .environmentObject(settings)
+                            } label: {
                                 ModernCard {
                                     VStack(spacing: 8) {
                                         Image(systemName: "gearshape.fill")
@@ -193,6 +196,7 @@ struct HomePageView: View {
                 }
             }
         }
+        .environmentObject(settings)
     }
 }
 
@@ -204,6 +208,5 @@ struct HomePageView: View {
 struct HomePageView_Previews: PreviewProvider {
     static var previews: some View {
         HomePageView()
-            .environmentObject(UserSettings())
     }
 }

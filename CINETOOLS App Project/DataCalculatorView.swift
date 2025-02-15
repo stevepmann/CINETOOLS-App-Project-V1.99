@@ -16,6 +16,7 @@ struct AdditionalCamera: Identifiable {
 }
 
 struct DataCalculatorView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedBrand = 0
     @State private var selectedModel = 0
     @State private var selectedCodec = 0
@@ -79,7 +80,7 @@ struct DataCalculatorView: View {
                                     } label: {
                                         HStack {
                                             Label {
-                                                Text("Camera Brand")
+                                                Text("Brand")
                                                     .font(.title2)
                                                     .foregroundColor(.primary)
                                             } icon: {
@@ -104,7 +105,7 @@ struct DataCalculatorView: View {
                                     } label: {
                                         HStack {
                                             Label {
-                                                Text("Camera Model")
+                                                Text("Model")
                                                     .font(.title2)
                                                     .foregroundColor(.primary)
                                             } icon: {
@@ -182,7 +183,7 @@ struct DataCalculatorView: View {
                                         } label: {
                                             HStack {
                                                 Label("Brand", systemImage: "camera.fill")
-                                                    .foregroundStyle(.blue)
+                                                    .foregroundStyle(.foreground)
                                                 Spacer()
                                                 Image(systemName: "chevron.right")
                                             }
@@ -204,7 +205,7 @@ struct DataCalculatorView: View {
                                         } label: {
                                             HStack {
                                                 Label("Model", systemImage: "video.fill")
-                                                    .foregroundStyle(.blue)
+                                                    .foregroundStyle(.foreground)
                                                 Spacer()
                                                 Image(systemName: "chevron.right")
                                             }
@@ -222,7 +223,7 @@ struct DataCalculatorView: View {
                                         } label: {
                                             HStack {
                                                 Label("Codec", systemImage: "film.fill")
-                                                    .foregroundStyle(.orange)
+                                                    .foregroundStyle(.foreground)
                                                 Spacer()
                                                 Image(systemName: "chevron.right")
                                             }
@@ -230,7 +231,7 @@ struct DataCalculatorView: View {
                                         .pickerStyle(.navigationLink)
                                     }
                                 }
-                                .padding(.horizontal)
+                              
                             }
                             
                             // Add Camera Button
@@ -332,6 +333,12 @@ struct DataCalculatorView: View {
                             Link("Request Camera/Codec Addition",
                                  destination: URL(string: "mailto:app@stevepmann.com")!)
                                 .font(.subheadline)
+                            
+                            VStack(spacing: 1) {
+                                Image("-headerlogo-")
+                                    .resizable()
+                                    .frame(width: 300, height: 100)
+                            }
                          
                         }
                         .padding(10)
@@ -339,7 +346,31 @@ struct DataCalculatorView: View {
                     }
                     .padding(.vertical)
                 }
+                
+                // Add floating back button
+                VStack {
+                    HStack {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.primary)
+                                .padding(12)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 0)
+                        }
+                        .padding(.leading, 20)
+                        
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+                    
+                    Spacer()
+                }
             }
+            .navigationBarHidden(true)
         }
         .onChange(of: selectedBrand) { oldValue, newValue in
             // Reset model and codec when brand changes

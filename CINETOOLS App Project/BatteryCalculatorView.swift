@@ -349,10 +349,42 @@ struct ContentView: View {
                     }
                     .padding(.vertical)
                   
+                    VStack(spacing: 1) {
+                        Image("-headerlogo-")
+                            .resizable()
+                            .frame(width: 300, height: 100)
+                    }
+                }
+                
+                // Add floating back button
+                VStack {
+                    HStack {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.primary)
+                                .padding(12)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 0)
+                        }
+                        .padding(.leading, 20)
+                        
+                        Spacer()
+                        
+                    }
+                    .padding(.top, 8)
+                    
+                    Spacer()
                     
                 }
+                
             }
+            .navigationBarHidden(true)
         }
+        
     }
 }
 

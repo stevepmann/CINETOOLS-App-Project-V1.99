@@ -25,6 +25,9 @@ struct UserSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var settings: UserSettings
     @State private var isSaved = false
+    @State private var searchText = ""
+    @State private var isSearching = false
+    @FocusState private var isSearchFocused: Bool
     let cameras = CameraDatabase.shared.getCameraForDataCalc()
     let accessories = CameraDatabase.shared.getAccessories()
     
@@ -38,14 +41,139 @@ struct UserSettingsView: View {
         return min(settings.selectedModel, max(0, modelCount - 1))
     }
     
+    // Add this computed property to filter results
+    private var filteredResults: (cameras: [(brand: Int, model: Int)], accessories: [Int]) {
+        if searchText.isEmpty {
+            return ([], [])
+        }
+        
+        let searchTerms = searchText.lowercased().split(separator: " ")
+        
+        // Filter cameras
+        var matchingCameras: [(brand: Int, model: Int)] = []
+        for (brandIndex, brand) in cameras.enumerated() {
+            for (modelIndex, model) in brand.models.enumerated() {
+                let fullName = "\(brand.name) \(model.name)".lowercased()
+                if searchTerms.allSatisfy({ fullName.contains($0) }) {
+                    matchingCameras.append((brandIndex, modelIndex))
+                }
+            }
+        }
+        
+        // Filter accessories
+        let matchingAccessories = accessories.enumerated().compactMap { index, accessory in
+            searchTerms.allSatisfy { accessory.name.lowercased().contains($0) } ? index : nil
+        }
+        
+        return (matchingCameras, matchingAccessories)
+    }
+    
     var body: some View {
         ZStack {
             ScrollView {
                 VStack(spacing: 24) {
                     Spacer()
-                        .frame(height: 20)  // Add space at the top
+                        .frame(height: 16)
                     
-                    // Combined Camera and Peripherals Card
+                    // Search bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+                        
+                        TextField("Search for your kit", text: $searchText)
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .autocorrectionDisabled()
+                            .foregroundColor(.secondary)
+                        
+                        if !searchText.isEmpty {
+                            Button(action: {
+                                searchText = ""
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 15)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .frame(width: 200)
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    
+                    // Search results
+                    if !searchText.isEmpty {
+                        ModernCard {
+                            VStack(alignment: .leading, spacing: 16) {
+                                let results = filteredResults
+                                
+                                if !results.cameras.isEmpty {
+                                    Text("Cameras")
+                                        .font(.headline)
+                                    
+                                    ForEach(results.cameras, id: \.model) { brand, model in
+                                        Button {
+                                            settings.selectedBrand = brand
+                                            settings.selectedModel = model
+                                            searchText = ""
+                                        } label: {
+                                            HStack {
+                                                Text("\(cameras[brand].name) \(cameras[brand].models[model].name)")
+                                                    .foregroundColor(.primary)
+                                                Spacer()
+                                                if settings.selectedBrand == brand && settings.selectedModel == model {
+                                                    Image(systemName: "checkmark")
+                                                        .foregroundColor(.green)
+                                                }
+                                            }
+                                        }
+                                        .padding(.vertical, 4)
+                                    }
+                                }
+                                
+                                if !results.accessories.isEmpty {
+                                    if !results.cameras.isEmpty {
+                                        Divider()
+                                    }
+                                    
+                                    Text("Accessories")
+                                        .font(.headline)
+                                    
+                                    ForEach(results.accessories, id: \.self) { index in
+                                        Button {
+                                            if settings.selectedAccessories.contains(index) {
+                                                settings.selectedAccessories.remove(index)
+                                            } else {
+                                                settings.selectedAccessories.insert(index)
+                                            }
+                                            settings.saveSettings()
+                                        } label: {
+                                            HStack {
+                                                Text(accessories[index].name)
+                                                    .foregroundColor(.primary)
+                                                Spacer()
+                                                if settings.selectedAccessories.contains(index) {
+                                                    Image(systemName: "checkmark")
+                                                        .foregroundColor(.green)
+                                                }
+                                            }
+                                        }
+                                        .padding(.vertical, 4)
+                                    }
+                                }
+                                
+                                if results.cameras.isEmpty && results.accessories.isEmpty {
+                                    Text("No matches found")
+                                        .foregroundColor(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // Camera and Peripherals Card
                     ModernCard {
                         VStack(spacing: 12) {
                             // Camera Section
@@ -142,8 +270,7 @@ struct UserSettingsView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Add after the accessories card and before the save button
-                    // Always show the summary card
+                    // Selected Setup Card
                     ModernCard {
                         VStack(spacing: 12) {
                             // Title
@@ -254,31 +381,27 @@ struct UserSettingsView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Footer
-                    NavigationLink(destination: SupportPageView()) { 
-                        Text("Request Camera/Peripheral Addition") 
+                    // Footer content
+                    VStack(spacing: 16) {
+                        NavigationLink(destination: SupportPageView()) { 
+                            Text("Request Camera/Peripheral Addition") 
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                        
+                        // Logo
+                        VStack(spacing: 1) {
+                            Image("-headerlogo-")
+                                .resizable()
+                                .frame(width: 300, height: 100)
+                        }
                     }
-                    .font(.subheadline)
-                    .foregroundColor(.blue)
-
-                    // Logo
-                    VStack(spacing: 1) {
-                        Image("-headerlogo-")
-                            .resizable()
-                            .frame(width: 300, height: 100)
-                    }
+                    .padding(.vertical)
                 }
                 .padding(.vertical)
             }
-            .background(Color(.systemBackground).ignoresSafeArea())
-            .onChange(of: settings.selectedBrand) { oldValue, newValue in
-                settings.saveSettings()
-            }
-            .onChange(of: settings.selectedModel) { oldValue, newValue in
-                settings.saveSettings()
-            }
             
-            // Floating Back Button
+            // Floating back button remains unchanged
             VStack {
                 HStack {
                     Button(action: {
