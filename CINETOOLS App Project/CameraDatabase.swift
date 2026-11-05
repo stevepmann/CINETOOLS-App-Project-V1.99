@@ -1420,8 +1420,9 @@ class CameraDatabase {
         Accessory(name: "Wisycom MCR54 (4 Channel Receiver)", powerDraw: 6, category: .audio),
         Accessory(name: "Deity Theos D2RX (dual-channel receiver)", powerDraw: 4.5,category: .audio),
         //Accessory(name: "Deity Theos D4RX (4 channel receiver)", powerDraw: 4.5,category: .audio),
+        Accessory(name: "Deity Deity TC-1 Timecode Generator", powerDraw: 0.15,category: .audio),
         Accessory(name: "Deity Deity TC-1 Timecode Generator", powerDraw: 0.15,category: .audio)
-    ]
+        ]
     
     // Helper method to get camera for battery calculator
     func getCameraForBatteryCalc() -> [CameraBrand] {
