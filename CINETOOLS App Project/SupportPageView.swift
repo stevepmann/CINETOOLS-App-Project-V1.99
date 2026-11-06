@@ -73,7 +73,7 @@ struct SupportPageView: View {
                         RowDivider()
                         SettingRow("Rate the app", subLabel: "Leave a review",
                                    value: "App Store", chevron: true) {
-                            open("https://apps.apple.com/us/app/go-game-connect/id6742568544") // Add actual App Store ID
+                            open("https://apps.apple.com/app/id6742568544?action=write-review")
                         }
                     }
 
