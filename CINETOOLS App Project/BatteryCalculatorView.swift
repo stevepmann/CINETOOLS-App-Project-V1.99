@@ -183,7 +183,12 @@ struct BatteryCalculatorView: View {
     
     let cameraBrands = CameraDatabase.shared.getCameraForBatteryCalc()
     let accessories = CameraDatabase.shared.getAccessories()
-    let batteries = [
+    /// UserDefaults keys for the last battery / count used (read by Home)
+    static let lastBatteryKey = "LastBatteryIndex"
+    static let lastBatteryQuantityKey = "LastBatteryQuantity"
+
+    /// Battery list (shared with Home so it can show the saved runtime)
+    static let batteryList = [
         Battery(model: "98Wh", wattHours: 98, voltage: 14.8),
         Battery(model: "150Wh", wattHours: 150, voltage: 14.8),
         Battery(model: "11Wh (Canon LP-E6)", wattHours: 11, voltage: 7.4),
@@ -201,6 +206,7 @@ struct BatteryCalculatorView: View {
         Battery(model: "1200Wh (BeBob CUBE 1200)", wattHours: 1200, voltage: 14.8),
         Battery(model: "1600Wh (Anton Bauer VCLX)", wattHours: 1600, voltage: 14.8)
     ]
+    let batteries = BatteryCalculatorView.batteryList
     
     // Add computed properties for safe indices
     private var safeBrand: Int {
@@ -320,6 +326,12 @@ struct BatteryCalculatorView: View {
         _currentBrand = State(initialValue: brand)
         _currentModel = State(initialValue: model)
         _currentAccessories = State(initialValue: validAccessories)
+
+        // Restore the last battery and battery count used (saved below in onChange)
+        let savedBattery = UserDefaults.standard.integer(forKey: BatteryCalculatorView.lastBatteryKey)
+        _selectedBattery = State(initialValue: BatteryCalculatorView.batteryList.indices.contains(savedBattery) ? savedBattery : 0)
+        let savedQuantity = UserDefaults.standard.integer(forKey: BatteryCalculatorView.lastBatteryQuantityKey)
+        _batteryQuantity = State(initialValue: (1...20).contains(savedQuantity) ? savedQuantity : 1)
         
         // Initialize local quantities as empty - we'll fall back to settings values
         _localFocusSystemQuantities = State(initialValue: [:])
@@ -419,6 +431,13 @@ struct BatteryCalculatorView: View {
             if newValue >= batteries.count {
                 selectedBattery = 0
             }
+        }
+        // Remember the last battery and count used (shown on Home)
+        .onChange(of: selectedBattery) { _, newValue in
+            UserDefaults.standard.set(newValue, forKey: BatteryCalculatorView.lastBatteryKey)
+        }
+        .onChange(of: batteryQuantity) { _, newValue in
+            UserDefaults.standard.set(newValue, forKey: BatteryCalculatorView.lastBatteryQuantityKey)
         }
     }
 }

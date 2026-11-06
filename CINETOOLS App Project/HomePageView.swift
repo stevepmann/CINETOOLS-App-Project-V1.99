@@ -14,6 +14,10 @@ struct HomePageView: View {
     /// Set when a Kit Bag ring is tapped: loads that setup, then opens Battery
     @State private var openBatteryFromKit = false
 
+    /// Last battery / count used on the Battery screen (saved there)
+    @AppStorage(BatteryCalculatorView.lastBatteryKey) private var lastBatteryIndex = 0
+    @AppStorage(BatteryCalculatorView.lastBatteryQuantityKey) private var lastBatteryQuantity = 1
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -28,7 +32,9 @@ struct HomePageView: View {
                     } label: {
                         ToolCard(code: "BAT.01 · Battery",
                                  title: "Runtime",
-                                 summary: "Runtime for your camera build",
+                                 value: batteryRuntime.map { String(format: "%.1f", $0) },
+                                 unit: batteryRuntime == nil ? nil : "hrs",
+                                 summary: batterySummary,
                                  detail: batteryDetail,
                                  style: .hero)
                     }
@@ -171,8 +177,8 @@ struct HomePageView: View {
     }
 
     /// Camera + accessories draw — same per-item rule as BatteryCalculatorView.totalPowerDraw
-    private var batteryDetail: [String] {
-        guard let camera = batteryCamera else { return [] }
+    private var batteryDraw: Double? {
+        guard let camera = batteryCamera else { return nil }
         let accessories = CameraDatabase.shared.getAccessories()
         let accessoriesDraw = settings.batteryCalcAccessories.reduce(0.0) { total, index in
             guard index < accessories.count else { return total }
@@ -184,7 +190,32 @@ struct HomePageView: View {
                 return total + accessory.powerDraw
             }
         }
-        return [camera.model, String(format: "%.1f W draw", camera.powerDraw + accessoriesDraw)]
+        return camera.powerDraw + accessoriesDraw
+    }
+
+    private var savedBattery: Battery? {
+        let batteries = BatteryCalculatorView.batteryList
+        return batteries.indices.contains(lastBatteryIndex) ? batteries[lastBatteryIndex] : nil
+    }
+
+    private var savedBatteryQuantity: Int {
+        (1...20).contains(lastBatteryQuantity) ? lastBatteryQuantity : 1
+    }
+
+    /// Same expression as BatteryCalculatorView.runtime (base 90% efficiency)
+    private var batteryRuntime: Double? {
+        guard let battery = savedBattery, let draw = batteryDraw, draw > 0 else { return nil }
+        return (battery.wattHours * 0.90 * Double(savedBatteryQuantity)) / draw
+    }
+
+    private var batterySummary: String {
+        guard let battery = savedBattery else { return "Runtime for your camera build" }
+        return "on \(savedBatteryQuantity)× \(battery.model)"
+    }
+
+    private var batteryDetail: [String] {
+        guard let camera = batteryCamera, let draw = batteryDraw else { return [] }
+        return [camera.model, String(format: "%.1f W draw", draw)]
     }
 
     /// Total storage — same expression as DataCalculatorView.totalStorageRequired
