@@ -34,7 +34,7 @@ struct HomePageView: View {
                             .environmentObject(settings)
                     } label: {
                         ToolCard(code: "BAT.01 · Battery",
-                                 title: "Runtime",
+                                 title: "Camera Runtime",
                                  value: batteryRuntime.map { String(format: "%.1f", $0) },
                                  unit: batteryRuntime == nil ? nil : "hrs",
                                  summary: batterySummary,
