@@ -150,7 +150,7 @@ struct HomePageView: View {
                     }
 
                     NavigationLink {
-                        UserSettingsView()
+                        UserSettingsView(startsWithEditor: true)
                             .environmentObject(settings)
                     } label: {
                         KitStoryRing(kind: .new)
@@ -169,28 +169,15 @@ struct HomePageView: View {
     // Index lookups are guarded so a stale saved index can never crash Home.
 
     private var batteryCamera: Camera? {
-        let brands = CameraDatabase.shared.getCameraForBatteryCalc()
-        guard brands.indices.contains(settings.batteryCalcBrand),
-              brands[settings.batteryCalcBrand].models.indices.contains(settings.batteryCalcModel)
-        else { return nil }
-        return brands[settings.batteryCalcBrand].models[settings.batteryCalcModel]
+        KitSummary.camera(brand: settings.batteryCalcBrand, model: settings.batteryCalcModel)
     }
 
-    /// Camera + accessories draw — same per-item rule as BatteryCalculatorView.totalPowerDraw
+    /// Camera + accessories draw — same rule as the Battery screen (see KitSummary)
     private var batteryDraw: Double? {
-        guard let camera = batteryCamera else { return nil }
-        let accessories = CameraDatabase.shared.getAccessories()
-        let accessoriesDraw = settings.batteryCalcAccessories.reduce(0.0) { total, index in
-            guard index < accessories.count else { return total }
-            let accessory = accessories[index]
-            if accessory.category.supportsQuantity {
-                let quantity = settings.focusSystemQuantities[index] ?? 1
-                return total + (accessory.powerDraw * Double(quantity))
-            } else {
-                return total + accessory.powerDraw
-            }
-        }
-        return camera.powerDraw + accessoriesDraw
+        KitSummary.drawWatts(brand: settings.batteryCalcBrand,
+                             model: settings.batteryCalcModel,
+                             accessories: settings.batteryCalcAccessories,
+                             quantities: settings.focusSystemQuantities)
     }
 
     private var savedBattery: Battery? {
@@ -202,10 +189,10 @@ struct HomePageView: View {
         (1...20).contains(lastBatteryQuantity) ? lastBatteryQuantity : 1
     }
 
-    /// Same expression as BatteryCalculatorView.runtime (base 90% efficiency)
+    /// Same expression as the Battery screen's base runtime (see KitSummary)
     private var batteryRuntime: Double? {
-        guard let battery = savedBattery, let draw = batteryDraw, draw > 0 else { return nil }
-        return (battery.wattHours * 0.90 * Double(savedBatteryQuantity)) / draw
+        guard let battery = savedBattery, let draw = batteryDraw else { return nil }
+        return KitSummary.runtimeHours(draw: draw, battery: battery, quantity: savedBatteryQuantity)
     }
 
     private var batterySummary: String {
@@ -259,11 +246,7 @@ struct HomePageView: View {
     }
 
     private func ringTag(for setup: KitSetup) -> String {
-        let brands = CameraDatabase.shared.getCameraForBatteryCalc()
-        guard brands.indices.contains(setup.brand),
-              brands[setup.brand].models.indices.contains(setup.model)
-        else { return "KIT" }
-        return brands[setup.brand].models[setup.model].model.uppercased()
+        KitSummary.camera(brand: setup.brand, model: setup.model)?.model.uppercased() ?? "KIT"
     }
 }
 
