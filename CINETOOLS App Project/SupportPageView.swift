@@ -80,7 +80,7 @@ struct SupportPageView: View {
                     // About
                     ThemedSectionHeader(title: "About")
                     GroupedCard {
-                        Text("CineTools was developed by Steve Mann, a working DP from the South Coast of the UK. The app was designed to streamline calculations when prepping for shoots, and also on set. Made by the video community for the video community!")
+                        Text("CineTools was developed by Steve Mann, a working DP and location sound mixer from the South Coast of the UK. The app was designed to streamline calculations when prepping for shoots, and also on set. Made by the video community for the video community!")
                             .font(Theme.Fonts.archivo(15))
                             .foregroundStyle(Theme.Colors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -99,7 +99,7 @@ struct SupportPageView: View {
                     // Footer
                     VStack(spacing: 4) {
                         Text(appVersion.isEmpty ? "CineTools" : "CineTools \(appVersion)")
-                        Text("Made by Steve Mann, a working DP")
+                        Text("Made by Steve Mann, a working DP and location sound mixer")
                     }
                     .font(Theme.Fonts.archivo(13))
                     .foregroundStyle(Theme.Colors.textQuaternary)
