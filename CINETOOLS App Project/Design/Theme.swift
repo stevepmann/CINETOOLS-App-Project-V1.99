@@ -212,13 +212,13 @@ extension Theme {
 
 extension View {
     /// Archivo 800, uppercase, tight tracking (−0.045em), tight leading (~0.95)
-    func displayTitle(_ size: CGFloat = 30) -> some View {
+    func displayTitle(_ size: CGFloat = 30, color: Color = Theme.Colors.textPrimary) -> some View {
         self
             .font(Theme.Fonts.archivo(size, .heavy))
             .textCase(.uppercase)
             .tracking(-0.045 * size)
             .lineSpacing(-0.05 * size)
-            .foregroundStyle(Theme.Colors.textPrimary)
+            .foregroundStyle(color)
     }
 
     /// Plex Mono 600, small, wide tracking (0.13em), uppercase — e.g. "EST. RUNTIME"
