@@ -169,6 +169,17 @@ struct BatteryCalculatorView: View {
     
     // Add local state for focus system quantities
     @State private var localFocusSystemQuantities: [Int: Int] = [:]
+
+    // MARK: Restyle v4 — presentation state only
+    @Environment(\.openURL) private var openURL
+    @State private var activeSheet: BatterySheet? = nil
+    /// Brand sheet moves straight on to the model list after a brand is picked
+    @State private var cameraSheetShowsModels = false
+
+    // MARK: Advanced (inline) — state moved from AdvancedBatteryCalculatorView
+    @State private var isAdvancedOn = false
+    @State private var ambientTemperature = 20.0 // Default 20°C
+    @State private var batteryAge = 1.0 // Default 1 year
     
     let cameraBrands = CameraDatabase.shared.getCameraForBatteryCalc()
     let accessories = CameraDatabase.shared.getAccessories()
@@ -219,6 +230,50 @@ struct BatteryCalculatorView: View {
     private var runtime: Double {
         let battery = batteries[selectedBattery]
         return (battery.wattHours * 0.90 * Double(batteryQuantity)) / totalPowerDraw
+    }
+
+    // MARK: Advanced factors — copied verbatim from AdvancedBatteryCalculatorView (unchanged)
+
+    // Temperature efficiency factor (simplified model)
+    private var temperatureEfficiencyFactor: Double {
+        // Efficiency factors for different temperature ranges
+        switch ambientTemperature {
+            case ..<(-20):  return 0.65  // Below -20°C
+            case -20..<(-10): return 0.70  // -20°C to -10°C
+            case -10..<0:   return 0.80  // -10°C to 0°C
+            case 0..<10:    return 0.90  // 0°C to 10°C
+            case 10..<20:   return 0.95  // 10°C to 20°C
+            case 20..<30:   return 1.00  // 20°C to 30°C (Optimal)
+            case 30..<40:   return 0.95  // 30°C to 40°C
+            case 40..<50:   return 0.90  // 40°C to 50°C
+            case 50...:     return 0.85  // Above 50°C
+            default:        return 1.00  // Fallback
+        }
+    }
+
+    // Battery age efficiency factor
+    private var ageEfficiencyFactor: Double {
+        // Simplified model: Battery capacity decreases by about 20% after 500 cycles (roughly 2 years of regular use)
+        let ageFactor = max(1.0 - (batteryAge * 0.12), 0.2) // Maximum degradation of 40%
+        return ageFactor
+    }
+
+    private var advancedRuntime: Double {
+        let battery = batteries[selectedBattery]
+        let baseEfficiency = 0.90 // Base Li-ion efficiency
+        let totalEfficiency = baseEfficiency * temperatureEfficiencyFactor * ageEfficiencyFactor
+        let effectiveWattHours = battery.wattHours * totalEfficiency * Double(batteryQuantity)
+        return effectiveWattHours / totalPowerDraw
+    }
+
+    // MARK: Display-only values (pick which existing result to show; no new maths)
+
+    private var displayedRuntime: Double {
+        isAdvancedOn ? advancedRuntime : runtime
+    }
+
+    private var displayedEfficiency: Double {
+        isAdvancedOn ? 0.90 * temperatureEfficiencyFactor * ageEfficiencyFactor : 0.90
     }
     
     // Keep only these working sorted indices
@@ -272,289 +327,42 @@ struct BatteryCalculatorView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color(UIColor.systemBackground)
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 24) {
-                        Spacer()
-                            .frame(height: 22)  // Add space at the top
-                        
-                        // Title
-                        Text("Camera Rig Runtime Calculator")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.horizontal)
-                        
-                        // Camera Section
-                        ModernCard {
-                            VStack(spacing: 12) {
-                                Picker(selection: $currentBrand) {
-                                    ForEach(sortedBrandIndices, id: \.self) { index in
-                                        Text(cameraBrands[index].name).tag(index)
-                                    }
-                                } label: {
-                                    HStack {
-                                        Label {
-                                            Text("Brand")
-                                                .font(.headline)
-                                                .foregroundColor(.primary)
-                                        } icon: {
-                                            Image(systemName: "camera.fill")
-                                                .foregroundStyle(.green)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary.opacity(0.7))
-                                    }
-                                }
-                                .pickerStyle(.navigationLink)
-                                .onAppear { isInPickerView = true }
-                                .onDisappear { isInPickerView = false }
-                                
-                                Divider()
-                                
-                                Picker(selection: $currentModel) {
-                                    ForEach(sortedModelIndices, id: \.self) { index in
-                                        Text(cameraBrands[currentBrand].models[index].model).tag(index)
-                                    }
-                                } label: {
-                                    HStack {
-                                        Label {
-                                            Text("Model")
-                                                .font(.headline)
-                                                .foregroundColor(.primary)
-                                        } icon: {
-                                            Image(systemName: "video.fill")
-                                                .foregroundStyle(.green)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary.opacity(0.7))
-                                    }
-                                }
-                                .pickerStyle(.navigationLink)
-                                .onAppear { isInPickerView = true }
-                                .onDisappear { isInPickerView = false }
-
-                                Divider()
-                                
-                                PowerDrawRow(
-                                    value: cameraBrands[safeBrand].models[safeModel].powerDraw,
-                                    icon: "bolt.fill",
-                                    color: .orange
-                                )
-                            }
-                        }
-                        
-                        // Accessories Section
-                        ModernCard {
-                            AccessoriesSection(
-                                selectedAccessories: $currentAccessories,
-                                focusSystemQuantities: $localFocusSystemQuantities,
-                                accessories: accessories
-                            )
-                        }
-                        
-                        // Battery Section
-                        ModernCard {
-                            VStack(spacing: 12) {
-                                Picker(selection: $selectedBattery) {
-                                    ForEach(0..<batteries.count, id: \.self) { index in
-                                        Text(batteries[index].model).tag(index)
-                                    }
-                                } label: {
-                                    HStack {
-                                        Label {
-                                            Text("Battery Capacity")
-                                                .font(.title2)
-                                                .foregroundColor(.primary)
-                                        } icon: {
-                                            Text("🔋")
-                                                .font(.title3)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary.opacity(0.7))
-                                    }
-                                }
-                                .pickerStyle(.navigationLink)
-                                
-                                Divider()
-                                
-                                // Update the battery quantity section
-                                HStack {
-                                    Text("Number of Batteries")
-                                        .font(.title3)  // Slightly smaller than .title2 used above
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
-                                    HStack(spacing: 20) {
-                                        Button(action: {
-                                            if batteryQuantity > 1 {
-                                                batteryQuantity -= 1
-                                            }
-                                        }) {
-                                            Image(systemName: "minus.circle.fill")
-                                                .foregroundStyle(.secondary)
-                                                .font(.title2)
-                                        }
-                                        
-                                        Text("\(batteryQuantity)")
-                                            .font(.headline)
-                                            .monospacedDigit()
-                                            .frame(minWidth: 30)
-                                        
-                                        Button(action: {
-                                            if batteryQuantity < 20 {
-                                                batteryQuantity += 1
-                                            }
-                                        }) {
-                                            Image(systemName: "plus.circle.fill")
-                                                .foregroundStyle(.secondary)
-                                                .font(.title2)
-                                        }
-                                    }
-                                }
-                                
-                                // Add total capacity display
-                                HStack {
-                                    Text("Total Battery Capacity")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Text("\(String(format: "%.1f", batteries[selectedBattery].wattHours * Double(batteryQuantity)))Wh")
-                                        .font(.subheadline)
-                                        .monospacedDigit()
-                                        .foregroundStyle(.secondary)
-                                }
-                                .padding(.top, 4)
-                            }
-                        }
-                        
-                        // Runtime Display
-                        ModernCard {
-                            VStack(spacing: 16) {
-                                Text("Estimated Runtime")
-                                    .font(.subheadline)
-                                    .textCase(.uppercase)
-                                    .foregroundStyle(.secondary)
-                                
-                                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                    Text(String(format: "%.1f", runtime))
-                                        .font(.system(size: 64, weight: .bold, design: .rounded))
-                                        .monospacedDigit()
-                                        .foregroundColor(.primary)
-                                    Text("hours")
-                                        .font(.title3)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Text(String(format: "%.0f minutes", runtime * 60))
-                                    .font(.title3)
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
-                                
-                                // Add per-battery information when multiple batteries are selected
-                                if batteryQuantity > 1 {
-                                    Text("(\(String(format: "%.1f", runtime / Double(batteryQuantity))) hours per battery)")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                        .monospacedDigit()
-                                }
-                                
-                                HStack {
-                                    Label("\(String(format: "%.1f", totalPowerDraw))W", systemImage: "bolt.fill")
-                                        .foregroundStyle(.orange)
-                                        .font(.headline)
-                                        .monospacedDigit()
-                                }
-                                .padding(.top, 8)
-                                
-                                Divider()
-                                
-                                // First, create the destination view
-                                let advancedView = AdvancedBatteryCalculatorView(
-                                    brand: currentBrand,
-                                    model: currentModel,
-                                    battery: selectedBattery,
-                                    accessories: currentAccessories,
-                                    batteryQuantity: batteryQuantity
-                                )
-
-                                // Then create the navigation link with modifiers
-                                NavigationLink {
-                                    advancedView
-                                        .onAppear {
-                                            isNavigatingToAdvanced = true
-                                        }
-                                        .onDisappear {
-                                            isNavigatingToAdvanced = false
-                                        }
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack {
-                                            Label {
-                                                Text("Advanced Runtime Calculator")
-                                                    .foregroundColor(.primary)
-                                            } icon: {
-                                                Image(systemName: "arrow.right.circle.fill")
-                                                    .foregroundStyle(.orange)
-                                            }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary.opacity(0.7))
-                                        }
-                                        
-                                     
-                                    }
-                                }
-                                .padding(.vertical, 8)
-                            }
-                            .padding(20)
-                        }
-                        
-                        // Support Section
-                        VStack(spacing: 16) {
-                            Link("Request Camera/Accessory Addition",
-                                 destination: URL(string: "mailto:app@stevepmann.com")!)
-                                .font(.subheadline)
-                        }
-                        .padding(10)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ThemedBackButton(title: "Tools") {
+                        isLeavingView = true  // Set this flag before dismissing
+                        dismiss()
                     }
-                    .padding(.horizontal)
-                }
-                
-                // Update the floating back button
-                VStack {
-                    HStack {
-                        Button(action: {
-                            isLeavingView = true  // Set this flag before dismissing
-                            dismiss()
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.primary)
-                                .padding(12)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 0)
+                    .padding(.horizontal, Theme.Spacing.titleMargin)
+                    .padding(.top, 4)
+
+                    ScreenTitle(text: "Battery Runtime")
+                        .padding(.top, 4)
+
+                    VStack(spacing: 0) {
+                        runtimeHero
+                            .padding(.top, 16)
+                        cameraSection
+                        peripheralsSection
+                        powerSection
+                        advancedSection
+
+                        TextLink("Missing kit? Request an addition") {
+                            if let url = URL(string: "mailto:app@stevepmann.com") {
+                                openURL(url)
+                            }
                         }
-                        .padding(.leading, 20)
-                        
-                        Spacer()
+                        .padding(.top, 20)
                     }
-                    .padding(.top, 8)
-                    
-                    Spacer()
+                    .padding(.horizontal, Theme.Spacing.cardMargin)
+                    .padding(.bottom, 40)
                 }
+            }
+            .scrollIndicators(.hidden)
+            .themedScreen()
+            .sheet(item: $activeSheet) { sheet in
+                sheetContent(for: sheet)
+                    .themedSheet()
             }
             .navigationBarHidden(true)
         }
@@ -611,6 +419,360 @@ struct BatteryCalculatorView: View {
             if newValue >= batteries.count {
                 selectedBattery = 0
             }
+        }
+    }
+}
+
+// MARK: - Restyle v4: Battery screen sections
+//
+// Presentation only. Every value shown comes from the existing computed properties
+// (runtime, totalPowerDraw, batteries, accessories…). Accessory and quantity changes
+// below are the same code that lived in AccessoriesSection.
+
+enum BatterySheet: Identifiable, Equatable {
+    case camera
+    case battery
+    case accessories(AccessoryCategory)
+
+    var id: String {
+        switch self {
+        case .camera: return "camera"
+        case .battery: return "battery"
+        case .accessories(let category): return "accessories-\(category.rawValue)"
+        }
+    }
+}
+
+extension BatteryCalculatorView {
+
+    // MARK: Hero
+
+    var runtimeHero: some View {
+        ResultHero {
+            RingGauge(progress: displayedRuntime / 10) {
+                VStack(spacing: 2) {
+                    Text("Est. runtime")
+                        .microLabel()
+                    Text(String(format: "%.1f", displayedRuntime))
+                        .font(Theme.Fonts.heroRing)
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .contentTransition(.numericText())
+                        .animation(Theme.Motion.result, value: displayedRuntime)
+                    Text("hours · " + String(format: "%.0f min", displayedRuntime * 60))
+                        .font(Theme.Fonts.archivo(15))
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    // Per-battery information when multiple batteries are selected
+                    if batteryQuantity > 1 {
+                        Text(String(format: "%.1f hrs per battery", displayedRuntime / Double(batteryQuantity)))
+                            .font(Theme.Fonts.subLabel)
+                            .foregroundStyle(Theme.Colors.textQuaternary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                }
+                .padding(.horizontal, 28)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 8)
+
+            Text("Ring shows share of a 10-hour day")
+                .font(Theme.Fonts.subLabel)
+                .foregroundStyle(Theme.Colors.textQuaternary)
+                .frame(maxWidth: .infinity)
+
+            HStack(spacing: 8) {
+                StatTile(label: "Draw",
+                         value: String(format: "%.1f", totalPowerDraw),
+                         unit: "W")
+                StatTile(label: "Capacity",
+                         value: String(format: "%g", batteries[selectedBattery].wattHours * Double(batteryQuantity)),
+                         unit: "Wh")
+                StatTile(label: "Efficiency",
+                         value: "\(Int(displayedEfficiency * 100))",
+                         unit: "%")
+            }
+        }
+    }
+
+    // MARK: 1 · Camera
+
+    var cameraSection: some View {
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "1 · Camera")
+            GroupedCard {
+                SettingRow("Brand", value: cameraBrands[safeBrand].name, chevron: true) {
+                    cameraSheetShowsModels = false
+                    activeSheet = .camera
+                }
+                RowDivider()
+                SettingRow("Model", value: cameraBrands[safeBrand].models[safeModel].model, chevron: true) {
+                    cameraSheetShowsModels = true
+                    activeSheet = .camera
+                }
+                RowDivider()
+                SettingRow("Power draw",
+                           value: String(format: "%.1f W", cameraBrands[safeBrand].models[safeModel].powerDraw),
+                           mono: true,
+                           valueColor: Theme.Colors.textPrimary)
+            }
+        }
+    }
+
+    // MARK: 2 · Peripherals
+
+    var peripheralsSection: some View {
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "2 · Peripherals")
+            GroupedCard {
+                ForEach(AccessoryCategory.allCases, id: \.self) { category in
+                    let watts = selectedWatts(in: category)
+                    SettingRow(category.rawValue, subLabel: selectedNames(in: category)) {
+                        activeSheet = .accessories(category)
+                    } trailing: {
+                        RowValue(text: watts > 0 ? String(format: "%.1f W", watts) : "",
+                                 mono: true,
+                                 chevron: true)
+                    }
+                    RowDivider()
+                }
+                SettingRow("Accessories total",
+                           value: String(format: "%.1f W", totalPowerDraw - cameraBrands[safeBrand].models[safeModel].powerDraw),
+                           mono: true,
+                           valueColor: Theme.Colors.textPrimary)
+            }
+        }
+    }
+
+    // MARK: 3 · Power
+
+    var powerSection: some View {
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "3 · Power")
+            GroupedCard {
+                SettingRow("Battery", value: batteries[selectedBattery].model, chevron: true) {
+                    activeSheet = .battery
+                }
+                RowDivider()
+                SettingRow("Number of batteries") {
+                    StepperPill(value: batteryQuantity,
+                                canDecrement: batteryQuantity > 1,
+                                canIncrement: batteryQuantity < 20,
+                                onDecrement: {
+                                    if batteryQuantity > 1 {
+                                        batteryQuantity -= 1
+                                    }
+                                },
+                                onIncrement: {
+                                    if batteryQuantity < 20 {
+                                        batteryQuantity += 1
+                                    }
+                                })
+                }
+            }
+        }
+    }
+
+    // MARK: 4 · Advanced (inline)
+
+    var advancedSection: some View {
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "4 · Advanced")
+            GroupedCard {
+                SettingRow("Temp & battery age", subLabel: "Base calculation uses 90% efficiency") {
+                    Toggle("Temp & battery age", isOn: $isAdvancedOn.animation(.snappy))
+                        .labelsHidden()
+                        .themedControlTint()
+                }
+
+                if isAdvancedOn {
+                    RowDivider()
+                    sliderRow(title: "Ambient temperature",
+                              value: "\(Int(ambientTemperature))°C · \(Int(temperatureEfficiencyFactor * 100))%") {
+                        Slider(value: $ambientTemperature, in: -20...50, step: 1)
+                    }
+                    RowDivider()
+                    sliderRow(title: "Battery age",
+                              value: String(format: "%g yrs", batteryAge) + " · \(Int(ageEfficiencyFactor * 100))%") {
+                        Slider(value: $batteryAge, in: 0...5, step: 0.5)
+                    }
+                }
+            }
+        }
+    }
+
+    private func sliderRow<S: View>(title: String, value: String, @ViewBuilder slider: () -> S) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(title)
+                    .font(Theme.Fonts.body)
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                Spacer()
+                Text(value)
+                    .font(Theme.Fonts.rowValue)
+                    .foregroundStyle(Theme.Colors.textTertiary)
+                    .contentTransition(.numericText())
+            }
+            slider()
+                .tint(Theme.Colors.paper)
+        }
+        .padding(.horizontal, Theme.Spacing.rowPadding)
+        .padding(.vertical, 14)
+    }
+
+    // MARK: Sheets
+
+    @ViewBuilder
+    func sheetContent(for sheet: BatterySheet) -> some View {
+        switch sheet {
+        case .camera:
+            if cameraSheetShowsModels {
+                SheetScaffold(title: "Model", onDone: { activeSheet = nil }) {
+                    SelectionList(options: modelOptions, selectedID: safeModel) { id in
+                        currentModel = id
+                        activeSheet = nil
+                    }
+                }
+            } else {
+                SheetScaffold(title: "Brand", onDone: { activeSheet = nil }) {
+                    SelectionList(options: brandOptions, selectedID: safeBrand) { id in
+                        currentBrand = id
+                        withAnimation(.snappy) { cameraSheetShowsModels = true }
+                    }
+                }
+            }
+
+        case .battery:
+            SheetScaffold(title: "Battery", onDone: { activeSheet = nil }) {
+                SelectionList(options: batteryOptions, selectedID: selectedBattery) { id in
+                    selectedBattery = id
+                    activeSheet = nil
+                }
+            }
+
+        case .accessories(let category):
+            SheetScaffold(title: category.rawValue, onDone: { activeSheet = nil }) {
+                MultiSelectList(options: accessoryOptions(in: category),
+                                isSelected: { currentAccessories.contains($0) },
+                                onToggle: { toggleAccessory($0) }) { index in
+                    if accessories[index].category.supportsQuantity && currentAccessories.contains(index) {
+                        HStack {
+                            Text("Quantity")
+                                .font(Theme.Fonts.subLabel)
+                                .foregroundStyle(Theme.Colors.textTertiary)
+                            Spacer()
+                            StepperPill(value: accessoryQuantity(index),
+                                        canDecrement: accessoryQuantity(index) > 1,
+                                        canIncrement: accessoryQuantity(index) < 99,
+                                        onDecrement: { decrementQuantity(index) },
+                                        onIncrement: { incrementQuantity(index) },
+                                        diameter: 34)
+                        }
+                        .padding(.horizontal, Theme.Spacing.rowPadding)
+                        .padding(.bottom, 12)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Picker options (labels only)
+
+    private var brandOptions: [PickerOption] {
+        sortedBrandIndices.map { index in
+            let count = cameraBrands[index].models.count
+            return PickerOption(id: index,
+                                title: cameraBrands[index].name,
+                                subtitle: count == 1 ? "1 model" : "\(count) models")
+        }
+    }
+
+    private var modelOptions: [PickerOption] {
+        sortedModelIndices.map { index in
+            let camera = cameraBrands[safeBrand].models[index]
+            return PickerOption(id: index,
+                                title: camera.model,
+                                subtitle: String(format: "%.1f W", camera.powerDraw))
+        }
+    }
+
+    private var batteryOptions: [PickerOption] {
+        batteries.indices.map { PickerOption(id: $0, title: batteries[$0].model) }
+    }
+
+    /// Accessories in one category, A–Z by name (original indices kept so saved selections still match)
+    private func accessoryOptions(in category: AccessoryCategory) -> [PickerOption] {
+        accessories.indices
+            .filter { accessories[$0].category == category }
+            .sorted { accessories[$0].name.localizedCaseInsensitiveCompare(accessories[$1].name) == .orderedAscending }
+            .map { PickerOption(id: $0, title: accessories[$0].name,
+                                subtitle: String(format: "%.1f W", accessories[$0].powerDraw)) }
+    }
+
+    // MARK: Peripheral row summaries (display only)
+
+    private func selectedIndices(in category: AccessoryCategory) -> [Int] {
+        currentAccessories
+            .filter { $0 < accessories.count && accessories[$0].category == category }
+            .sorted { accessories[$0].name.localizedCaseInsensitiveCompare(accessories[$1].name) == .orderedAscending }
+    }
+
+    private func selectedNames(in category: AccessoryCategory) -> String {
+        let names = selectedIndices(in: category).map { index -> String in
+            let quantity = accessoryQuantity(index)
+            if accessories[index].category.supportsQuantity && quantity > 1 {
+                return "\(accessories[index].name) ×\(quantity)"
+            }
+            return accessories[index].name
+        }
+        return names.isEmpty ? "None" : names.joined(separator: ", ")
+    }
+
+    /// Same per-item rule as totalPowerDraw, summed for one category
+    private func selectedWatts(in category: AccessoryCategory) -> Double {
+        selectedIndices(in: category).reduce(0.0) { total, index in
+            let accessory = accessories[index]
+            if accessory.category.supportsQuantity {
+                return total + (accessory.powerDraw * Double(accessoryQuantity(index)))
+            } else {
+                return total + accessory.powerDraw
+            }
+        }
+    }
+
+    // MARK: Accessory selection & quantities — same logic as AccessoriesSection
+
+    private func accessoryQuantity(_ index: Int) -> Int {
+        localFocusSystemQuantities[index] ?? settings.focusSystemQuantities[index] ?? 1
+    }
+
+    private func toggleAccessory(_ index: Int) {
+        if currentAccessories.contains(index) {
+            currentAccessories.remove(index)
+            if accessories[index].category.supportsQuantity {
+                localFocusSystemQuantities.removeValue(forKey: index)
+            }
+        } else {
+            currentAccessories.insert(index)
+            if accessories[index].category.supportsQuantity {
+                localFocusSystemQuantities[index] = settings.focusSystemQuantities[index] ?? 1
+            }
+        }
+    }
+
+    private func decrementQuantity(_ index: Int) {
+        if let current = localFocusSystemQuantities[index] ?? settings.focusSystemQuantities[index], current > 1 {
+            localFocusSystemQuantities[index] = current - 1
+        }
+    }
+
+    private func incrementQuantity(_ index: Int) {
+        let current = localFocusSystemQuantities[index] ?? settings.focusSystemQuantities[index] ?? 1
+        if current < 99 {
+            localFocusSystemQuantities[index] = current + 1
         }
     }
 }
