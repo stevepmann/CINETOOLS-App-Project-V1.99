@@ -255,12 +255,12 @@ struct UserSettingsView: View {
                                                         action: {
                                                             if settings.selectedAccessories.contains(index) {
                                                                 settings.selectedAccessories.remove(index)
-                                                                if accessories[index].category == .focus {
+                                                                if accessories[index].category.supportsQuantity {
                                                                     settings.focusSystemQuantities.removeValue(forKey: index)
                                                                 }
                                                             } else {
                                                                 settings.selectedAccessories.insert(index)
-                                                                if accessories[index].category == .focus {
+                                                                if accessories[index].category.supportsQuantity {
                                                                     settings.focusSystemQuantities[index] = 1
                                                                 }
                                                             }
@@ -269,7 +269,7 @@ struct UserSettingsView: View {
                                                     )
                                                     
                                                     // Add quantity selector for focus systems
-                                                    if accessories[index].category == .focus && settings.selectedAccessories.contains(index) {
+                                                    if accessories[index].category.supportsQuantity && settings.selectedAccessories.contains(index) {
                                                         HStack {
                                                             Text("Quantity")
                                                                 .font(.subheadline)
@@ -360,15 +360,15 @@ struct UserSettingsView: View {
                                             HStack {
                                                 Text(accessories[index].name)
                                                     .font(.subheadline)
-                                                if accessories[index].category == .focus {
+                                                if accessories[index].category.supportsQuantity {
                                                     Text("× \(settings.focusSystemQuantities[index] ?? 1)")
                                                         .font(.subheadline)
                                                         .foregroundStyle(.secondary)
                                                 }
                                                 Spacer()
                                                 let powerDraw = accessories[index].powerDraw * 
-                                                    Double(accessories[index].category == .focus ? 
-                                                        settings.focusSystemQuantities[index] ?? 1 : 1)
+                                                Double(accessories[index].category.supportsQuantity ?
+                                                    settings.focusSystemQuantities[index] ?? 1 : 1)
                                                 Text("\(String(format: "%.1f", powerDraw))W")
                                                     .font(.caption)
                                                     .foregroundStyle(.secondary)
@@ -391,8 +391,8 @@ struct UserSettingsView: View {
                                     cameras[selectedBrand].models[selectedModel].powerDraw
                                 ) { total, index in
                                     let accessory = accessories[index]
-                                    if accessory.category == .focus {
-                                        return total + (accessory.powerDraw * 
+                                    if accessories[index].category.supportsQuantity {
+                                        return total + (accessory.powerDraw *
                                             Double(settings.focusSystemQuantities[index] ?? 1))
                                     } else {
                                         return total + accessory.powerDraw

@@ -78,19 +78,19 @@ struct AccessoriesSection: View {
                                         action: {
                                             if selectedAccessories.contains(index) {
                                                 selectedAccessories.remove(index)
-                                                if accessories[index].category == .focus {
+                                                if accessories[index].category.supportsQuantity {
                                                     focusSystemQuantities.removeValue(forKey: index)
                                                 }
                                             } else {
                                                 selectedAccessories.insert(index)
-                                                if accessories[index].category == .focus {
+                                                if accessories[index].category.supportsQuantity {
                                                     focusSystemQuantities[index] = settings.focusSystemQuantities[index] ?? 1
                                                 }
                                             }
                                         }
                                     )
                                     
-                                    if accessories[index].category == .focus && selectedAccessories.contains(index) {
+                                    if accessories[index].category.supportsQuantity && selectedAccessories.contains(index) {
                                         HStack {
                                             Text("Quantity")
                                                 .font(.subheadline)
@@ -206,7 +206,7 @@ struct BatteryCalculatorView: View {
         let accessoriesDraw = currentAccessories.reduce(0.0) { total, index in
             guard index < accessories.count else { return total }
             let accessory = accessories[index]
-            if accessory.category == .focus {
+            if accessory.category.supportsQuantity {
                 let quantity = localFocusSystemQuantities[index] ?? settings.focusSystemQuantities[index] ?? 1
                 return total + (accessory.powerDraw * Double(quantity))
             } else {

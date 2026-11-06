@@ -34,6 +34,11 @@ enum AccessoryCategory: String, CaseIterable {
     case wireless = "Wireless Video"
     case focus = "Focus Systems"
     case audio = "Audio"
+    
+    /// Categories that show a quantity stepper when selected
+    var supportsQuantity: Bool {
+        self == .focus || self == .audio
+    }
 }
 
 struct Accessory {
@@ -60,4 +65,4 @@ struct DriveSpeed {
 struct TransferSpeed {
     let name: String
     let speedMbps: Double
-} 
+}
