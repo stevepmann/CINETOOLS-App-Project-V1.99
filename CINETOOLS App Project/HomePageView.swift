@@ -9,7 +9,10 @@
 import SwiftUI
 
 struct HomePageView: View {
-    @StateObject var settings = UserSettings()
+    /// Owned by MainTabView and shared with every tab
+    @EnvironmentObject var settings: UserSettings
+    /// Switches tabs when hosted in MainTabView (nil in previews)
+    @Environment(\.selectTab) private var selectTab
 
     /// Set when a Kit Bag ring is tapped: loads that setup, then opens Battery
     @State private var openBatteryFromKit = false
@@ -72,10 +75,11 @@ struct HomePageView: View {
                 }
                 .padding(.horizontal, Theme.Spacing.cardMargin)
                 .padding(.top, 8)
-                .padding(.bottom, 40)
+                .padding(.bottom, 120) // room for the floating tab bar
             }
             .scrollIndicators(.hidden)
             .themedScreen()
+            .countsAsTabRoot()
             .navigationDestination(isPresented: $openBatteryFromKit) {
                 BatteryCalculatorView()
                     .environmentObject(settings)
@@ -102,7 +106,7 @@ struct HomePageView: View {
 
             Spacer()
 
-            NavigationLink {
+            tabOrPushLink(.support) {
                 SupportPageView()
             } label: {
                 Text("Support")
@@ -113,7 +117,24 @@ struct HomePageView: View {
                     .background(Theme.Colors.card, in: Capsule())
                     .frame(minHeight: Theme.Size.tapTarget)
             }
-            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: Tab-or-push link
+
+    /// Switches to `tab` when hosted in the tab bar; otherwise pushes `destination`.
+    @ViewBuilder
+    private func tabOrPushLink<Destination: View, Label: View>(
+        _ tab: AppTab,
+        @ViewBuilder destination: @escaping () -> Destination,
+        @ViewBuilder label: () -> Label
+    ) -> some View {
+        if let selectTab {
+            Button { selectTab(tab) } label: { label() }
+                .buttonStyle(.plain)
+        } else {
+            NavigationLink(destination: destination, label: label)
+                .buttonStyle(.plain)
         }
     }
 
@@ -126,7 +147,7 @@ struct HomePageView: View {
                     .font(Theme.Fonts.archivo(22, .semibold))
                     .foregroundStyle(Theme.Colors.textPrimary)
                 Spacer()
-                NavigationLink {
+                tabOrPushLink(.kitBag) {
                     UserSettingsView()
                         .environmentObject(settings)
                 } label: {
@@ -134,7 +155,6 @@ struct HomePageView: View {
                         .font(Theme.Fonts.archivo(15))
                         .foregroundStyle(Theme.Colors.textTertiary)
                 }
-                .buttonStyle(.plain)
             }
 
             ScrollView(.horizontal) {
@@ -253,10 +273,12 @@ struct HomePageView: View {
 // Preview
 #Preview {
     HomePageView()
+        .environmentObject(UserSettings())
 }
 
 struct HomePageView_Previews: PreviewProvider {
     static var previews: some View {
         HomePageView()
+            .environmentObject(UserSettings())
     }
 }
