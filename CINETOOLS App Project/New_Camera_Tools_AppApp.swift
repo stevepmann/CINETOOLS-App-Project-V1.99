@@ -12,6 +12,7 @@ struct New_Camera_Tools_AppApp: App {
     var body: some Scene {
         WindowGroup {
             HomePageView()
+                .preferredColorScheme(.dark) // Restyle v4: dark is the target
         }
     }
 }
