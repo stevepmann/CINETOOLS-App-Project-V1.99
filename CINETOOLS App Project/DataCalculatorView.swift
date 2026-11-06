@@ -131,6 +131,11 @@ struct DataCalculatorView: View {
     
     // Add state to track if we're just navigating pickers
     @State private var isNavigatingPicker = false
+
+    // MARK: Restyle v4 — presentation state only
+    @Environment(\.openURL) private var openURL
+    @State private var showCameraSheet = false
+    @State private var cameraSheetStep: DataPickerStep = .brand
     
     // Get camera data from database
     let cameras = CameraDatabase.shared.getCameraForDataCalc()
@@ -198,268 +203,67 @@ struct DataCalculatorView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color(UIColor.systemBackground)
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 24) {
-                        LazyVStack(spacing: 20) {
-                            Spacer()
-                                .frame(height: 16)
-                            
-                            // Title Section
-                            Text("Data Usage Calculator")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.horizontal)
-                            
-                            ModernCard {
-                                VStack(spacing: 12) {
-                                    // Header with camera number and name field
-                                    HStack {
-                                        Text("Camera 1")
-                                            .font(.title2)
-                                            .foregroundColor(.primary)
-                                        Spacer()
-                                        TextField("Camera Name", text: $settings.mainCameraName)
-                                            .multilineTextAlignment(.trailing)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    
-                                    Divider()
-                                    
-                                    // Brand Selection
-                                    Picker(selection: selectedBrandBinding) {
-                                        ForEach(sortedBrandIndices, id: \.self) { index in
-                                            Text(cameras[index].name).tag(index)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Label {
-                                                Text("Brand")
-                                                    .font(.title2)
-                                                    .foregroundColor(.primary)
-                                            } icon: {
-                                                Image(systemName: "camera.fill")
-                                                    .foregroundStyle(.blue)
-                                            }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary.opacity(0.7))
-                                        }
-                                    }
-                                    .pickerStyle(.navigationLink)
-                                    
-                                    Divider()
-                                    
-                                    // Model Selection
-                                    Picker(selection: selectedModelBinding) {
-                                        ForEach(sortedModelIndices, id: \.self) { index in
-                                            Text(currentBrand.models[index].name).tag(index)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Label {
-                                                Text("Model")
-                                                    .font(.title2)
-                                                    .foregroundColor(.primary)
-                                            } icon: {
-                                                Image(systemName: "video.fill")
-                                                    .foregroundStyle(.blue)
-                                            }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary.opacity(0.7))
-                                        }
-                                    }
-                                    .pickerStyle(.navigationLink)
-                                    
-                                    Divider()
-                                    
-                                    // Codec Selection with bitrate
-                                    VStack(spacing: 4) {
-                                        Picker(selection: selectedCodecBinding) {
-                                            ForEach(sortedCodecIndices, id: \.self) { index in
-                                                Text(currentModel.codecs[index].name).tag(index)
-                                            }
-                                        } label: {
-                                            HStack {
-                                                Label {
-                                                    Text("Codec")
-                                                        .font(.title2)
-                                                        .foregroundColor(.primary)
-                                                } icon: {
-                                                    Image(systemName: "film.fill")
-                                                        .foregroundStyle(.orange)
-                                                }
-                                                Spacer()
-                                                Image(systemName: "chevron.right")
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary.opacity(0.7))
-                                            }
-                                        }
-                                        .pickerStyle(.navigationLink)
-                                        
-                                        // Add bitrate display
-                                        HStack {
-                                            Spacer()
-                                            Text("\(String(format: "%.1f", currentCodec.bitrate)) Mbps")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                                .monospacedDigit()
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            // Additional Cameras Section
-                            ForEach(settings.additionalCameras) { camera in
-                                AdditionalCameraView(
-                                    camera: camera,
-                                    settings: settings,
-                                    cameras: cameras,
-                                    activePicker: $activePicker
-                                )
-                            }
-                            
-                            // Add Camera Button
-                            Button {
-                                addCamera()
-                            } label: {
-                                Label("Add Camera", systemImage: "plus.circle.fill")
-                                    .font(.headline)
-                                    .foregroundStyle(.blue)
-                            }
-                            .padding(.vertical, 8)
-                            
-                            // Recording Duration Section
-                            ModernCard {
-                                VStack(spacing: 16) {
-                                    HStack {
-                                        Label {
-                                            Text("Recording Duration in Hours")
-                                                .font(.title2)
-                                                .foregroundColor(.primary)
-                                        } icon: {
-                                            Image(systemName: "clock.fill")
-                                                .foregroundStyle(.blue)
-                                            }
-                                        Spacer()
-                                        Text("\(settings.recordingHours, specifier: "%.1f")")
-                                            .monospacedDigit()
-                                    }
-                                    
-                                    Slider(value: $settings.recordingHours, in: 0...10, step: 0.1)
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                        
-                        // Total Storage Display
-                        ModernCard {
-                            VStack(spacing: 16) {
-                                Text("Total Required Storage")
-                                    .font(.subheadline)
-                                    .textCase(.uppercase)
-                                    .foregroundStyle(.secondary)
-                                
-                                VStack(spacing: 4) {
-                                    if totalStorageRequired >= 1000 {
-                                        HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                            Text(String(format: "%.2f", totalStorageRequired / 1000))
-                                                .font(.system(size: 64, weight: .bold, design: .rounded))
-                                                .monospacedDigit()
-                                            Text("TB")
-                                                .font(.title3)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        
-                                        Text("\(String(format: "%.1f", totalStorageRequired)) GB")
-                                            .font(.title3)
-                                            .foregroundStyle(.secondary)
-                                            .monospacedDigit()
-                                    } else {
-                                        HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                            Text(String(format: "%.1f", totalStorageRequired))
-                                                .font(.system(size: 64, weight: .bold, design: .rounded))
-                                                .monospacedDigit()
-                                            Text("GB")
-                                                .font(.title3)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                }
-                                
-                                // Show individual camera storage requirements
-                                if !settings.additionalCameras.isEmpty {
-                                    Divider()
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Breakdown:")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                        
-                                        Text("\(settings.mainCameraName): \(String(format: "%.1f", currentCodec.bitrate * 0.45 * settings.recordingHours)) GB")
-                                        
-                                        ForEach(settings.additionalCameras) { camera in
-                                            let model = cameras[camera.brand].models[camera.model]
-                                            let codec = model.codecs[camera.codec]
-                                            Text("\(camera.name): \(String(format: "%.1f", codec.bitrate * 0.45 * settings.recordingHours)) GB")
-                                        }
-                                    }
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                }
-                            }
-                            .padding(24)
-                        }
-                        .padding(.horizontal)
-                        
-                        // Support Section (without ModernCard)
-                        VStack(spacing: 10) {
-                       
-                            Link("Request Camera/Codec Addition",
-                                 destination: URL(string: "mailto:app@stevepmann.com")!)
-                                .font(.subheadline)
-                            
-                            VStack(spacing: 1) {
-                                Image("-headerlogo-")
-                                    .resizable()
-                                    .frame(width: 300, height: 100)
-                            }
-                         
-                        }
-                        .padding(10)
-                        .padding(.horizontal)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ThemedBackButton(title: "Tools") {
+                        dismiss()
                     }
-                    .padding(.vertical)
-                }
-                
-                // Add floating back button
-                VStack {
-                    HStack {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.primary)
-                                .padding(12)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 0)
+                    .padding(.horizontal, Theme.Spacing.titleMargin)
+                    .padding(.top, 4)
+
+                    ScreenTitle(text: "Data Usage")
+                        .padding(.top, 4)
+
+                    VStack(spacing: 0) {
+                        storageHero
+                            .padding(.top, 16)
+                        durationSection
+                        mainCameraSection
+
+                        // Additional Cameras Section
+                        ForEach(settings.additionalCameras) { camera in
+                            AdditionalCameraView(
+                                camera: camera,
+                                settings: settings,
+                                cameras: cameras,
+                                activePicker: $activePicker
+                            )
                         }
-                        .padding(.leading, 20)
-                        
-                        Spacer()
+
+                        OutlineButton("+ Add camera") {
+                            addCamera()
+                        }
+                        .padding(.top, 24)
+
+                        TextLink("Request camera / codec addition") {
+                            if let url = URL(string: "mailto:app@stevepmann.com") {
+                                openURL(url)
+                            }
+                        }
+                        .padding(.top, 12)
                     }
-                    .padding(.top, 8)
-                    
-                    Spacer()
+                    .padding(.horizontal, Theme.Spacing.cardMargin)
+                    .padding(.bottom, 40)
                 }
+            }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+            .themedScreen()
+            .sheet(isPresented: $showCameraSheet) {
+                CameraPickerFlow(
+                    step: $cameraSheetStep,
+                    brandOptions: dataBrandOptions(cameras: cameras, sorted: sortedBrandIndices),
+                    modelOptions: dataModelOptions(brand: currentBrand, sorted: sortedModelIndices),
+                    codecOptions: dataCodecOptions(model: currentModel, sorted: sortedCodecIndices),
+                    selectedBrand: currentBrandIndex,
+                    selectedModel: currentModelIndex,
+                    selectedCodec: currentCodecIndex,
+                    onBrand: { selectedBrandBinding.wrappedValue = $0 },
+                    onModel: { selectedModelBinding.wrappedValue = $0 },
+                    onCodec: { selectedCodecBinding.wrappedValue = $0 },
+                    onDone: { showCameraSheet = false }
+                )
+                .themedSheet()
             }
             .navigationBarHidden(true)
         }
@@ -496,6 +300,250 @@ struct DataCalculatorView: View {
         }
         
         return mainCameraStorage + additionalStorage
+    }
+}
+
+// MARK: - Restyle v4: Data screen sections
+//
+// Presentation only. Storage figures use the existing totalStorageRequired and the same
+// per-camera expression the old "Breakdown" used (bitrate * 0.45 * recordingHours).
+// Picker taps go through the existing bindings, so all reset / save behaviour is unchanged.
+
+extension DataCalculatorView {
+
+    /// One legend / bar entry per camera (main first, then additional cameras in order)
+    fileprivate struct StorageEntry: Identifiable {
+        let id: String
+        let label: String
+        let gigabytes: Double
+    }
+
+    fileprivate var storageEntries: [StorageEntry] {
+        var entries = [StorageEntry(
+            id: "main",
+            label: "\(settings.mainCameraName) · \(currentModel.name)",
+            gigabytes: currentCodec.bitrate * 0.45 * settings.recordingHours
+        )]
+        for camera in settings.additionalCameras {
+            let model = cameras[camera.brand].models[camera.model]
+            let codec = model.codecs[camera.codec]
+            entries.append(StorageEntry(
+                id: camera.id.uuidString,
+                label: "\(camera.name) · \(model.name)",
+                gigabytes: codec.bitrate * 0.45 * settings.recordingHours
+            ))
+        }
+        return entries
+    }
+
+    // MARK: Hero
+
+    var storageHero: some View {
+        ResultHero {
+            Text("Total required storage")
+                .microLabel()
+
+            VStack(alignment: .leading, spacing: 2) {
+                if totalStorageRequired >= 1000 {
+                    HeroNumber(value: String(format: "%.2f", totalStorageRequired / 1000), unit: "TB")
+                    Text("\(String(format: "%.1f", totalStorageRequired)) GB")
+                        .font(Theme.Fonts.mono(15))
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                } else {
+                    HeroNumber(value: String(format: "%.1f", totalStorageRequired), unit: "GB")
+                }
+            }
+
+            StorageStackedBar(values: storageEntries.map(\.gigabytes))
+
+            VStack(spacing: 10) {
+                ForEach(Array(storageEntries.enumerated()), id: \.element.id) { position, entry in
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(segmentColor(position))
+                            .frame(width: 8, height: 8)
+                        Text(entry.label)
+                            .font(Theme.Fonts.archivo(15))
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                            .lineLimit(1)
+                        Spacer(minLength: 8)
+                        Text("\(String(format: "%.1f", entry.gigabytes)) GB")
+                            .font(Theme.Fonts.mono(15))
+                            .foregroundStyle(Theme.Colors.textTertiary)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Recording duration
+
+    var durationSection: some View {
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "1 · Recording duration")
+            GroupedCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Per camera")
+                            .font(Theme.Fonts.body)
+                            .foregroundStyle(Theme.Colors.textPrimary)
+                        Spacer()
+                        Text("\(settings.recordingHours, specifier: "%.1f")")
+                            .font(Theme.Fonts.mono(22))
+                            .foregroundStyle(Theme.Colors.textPrimary)
+                        Text("hrs")
+                            .font(Theme.Fonts.mono(15))
+                            .foregroundStyle(Theme.Colors.textTertiary)
+                    }
+                    Slider(value: $settings.recordingHours, in: 0...10, step: 0.1)
+                        .tint(Theme.Colors.paper)
+                }
+                .padding(.horizontal, Theme.Spacing.rowPadding)
+                .padding(.vertical, 14)
+            }
+        }
+    }
+
+    // MARK: Camera 1
+
+    var mainCameraSection: some View {
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "Camera 1", dotColor: segmentColor(0))
+            GroupedCard {
+                SettingRow("Name") {
+                    TextField("Camera Name", text: $settings.mainCameraName)
+                        .multilineTextAlignment(.trailing)
+                        .font(Theme.Fonts.body)
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                }
+                RowDivider()
+                SettingRow("Brand", value: currentBrand.name, chevron: true) {
+                    openCameraSheet(at: .brand)
+                }
+                RowDivider()
+                SettingRow("Model", value: currentModel.name, chevron: true) {
+                    openCameraSheet(at: .model)
+                }
+                RowDivider()
+                SettingRow("Codec",
+                           subLabel: "\(String(format: "%.1f", currentCodec.bitrate)) Mbps",
+                           value: currentCodec.name,
+                           chevron: true) {
+                    openCameraSheet(at: .codec)
+                }
+            }
+        }
+    }
+
+    private func openCameraSheet(at step: DataPickerStep) {
+        cameraSheetStep = step
+        showCameraSheet = true
+    }
+}
+
+// MARK: - Shared Data helpers (file scope)
+
+/// Camera colour by position: rose, Paper, #A09679, #6F6656 (repeats after four)
+fileprivate func segmentColor(_ position: Int) -> Color {
+    let colors = Theme.Colors.cameraSegments
+    return colors[position % colors.count]
+}
+
+fileprivate func dataBrandOptions(cameras: [CameraData], sorted: [Int]) -> [PickerOption] {
+    sorted.map { index in
+        let count = cameras[index].models.count
+        return PickerOption(id: index, title: cameras[index].name,
+                            subtitle: count == 1 ? "1 model" : "\(count) models")
+    }
+}
+
+fileprivate func dataModelOptions(brand: CameraData, sorted: [Int]) -> [PickerOption] {
+    sorted.map { index in
+        let count = brand.models[index].codecs.count
+        return PickerOption(id: index, title: brand.models[index].name,
+                            subtitle: count == 1 ? "1 codec" : "\(count) codecs")
+    }
+}
+
+fileprivate func dataCodecOptions(model: CameraModel, sorted: [Int]) -> [PickerOption] {
+    sorted.map { index in
+        PickerOption(id: index, title: model.codecs[index].name,
+                     subtitle: "\(String(format: "%.1f", model.codecs[index].bitrate)) Mbps")
+    }
+}
+
+/// Which list the camera sheet is showing
+enum DataPickerStep {
+    case brand, model, codec
+}
+
+/// Brand → Model → Codec sheet. Picking a brand moves on to models, a model moves on to codecs,
+/// a codec closes the sheet. All selections are reported back through the closures.
+fileprivate struct CameraPickerFlow: View {
+    @Binding var step: DataPickerStep
+    let brandOptions: [PickerOption]
+    let modelOptions: [PickerOption]
+    let codecOptions: [PickerOption]
+    let selectedBrand: Int
+    let selectedModel: Int
+    let selectedCodec: Int
+    let onBrand: (Int) -> Void
+    let onModel: (Int) -> Void
+    let onCodec: (Int) -> Void
+    let onDone: () -> Void
+
+    var body: some View {
+        switch step {
+        case .brand:
+            SheetScaffold(title: "Brand", onDone: onDone) {
+                SelectionList(options: brandOptions, selectedID: selectedBrand) { id in
+                    onBrand(id)
+                    withAnimation(.snappy) { step = .model }
+                }
+            }
+        case .model:
+            SheetScaffold(title: "Model", onDone: onDone) {
+                SelectionList(options: modelOptions, selectedID: selectedModel) { id in
+                    onModel(id)
+                    withAnimation(.snappy) { step = .codec }
+                }
+            }
+        case .codec:
+            SheetScaffold(title: "Codec", onDone: onDone) {
+                SelectionList(options: codecOptions, selectedID: selectedCodec) { id in
+                    onCodec(id)
+                    onDone()
+                }
+            }
+        }
+    }
+}
+
+/// Stacked bar: one segment per camera, 3pt gaps, animated.
+fileprivate struct StorageStackedBar: View {
+    let values: [Double]
+    var height: CGFloat = 12
+
+    var body: some View {
+        GeometryReader { proxy in
+            let total = values.reduce(0, +)
+            let gap: CGFloat = 3
+            let usable = max(proxy.size.width - gap * CGFloat(max(values.count - 1, 0)), 0)
+            HStack(spacing: gap) {
+                if total > 0 {
+                    ForEach(Array(values.enumerated()), id: \.offset) { position, value in
+                        Capsule()
+                            .fill(segmentColor(position))
+                            .frame(width: usable * CGFloat(value / total))
+                    }
+                } else {
+                    Capsule().fill(Theme.Colors.trackInactive)
+                }
+            }
+        }
+        .frame(height: height)
+        .animation(Theme.Motion.result, value: values)
+        .accessibilityHidden(true)
     }
 }
 
@@ -603,6 +651,10 @@ struct AdditionalCameraView: View {
     @State private var localBrand: Int
     @State private var localModel: Int
     @State private var localCodec: Int
+
+    // MARK: Restyle v4 — presentation state only
+    @State private var showSheet = false
+    @State private var sheetStep: DataPickerStep = .brand
     
     // Add sorted indices computed properties
     private var sortedBrandIndices: [Int] {
@@ -682,14 +734,13 @@ struct AdditionalCameraView: View {
     }
     
     var body: some View {
-        ModernCard {
-            VStack(spacing: 12) {
-                // Header
-                HStack {
-                    Text("Camera \((cameraIndex ?? 0) + 2)")
-                        .font(.title2)
-                        .foregroundColor(.primary)
-                    
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "Camera \((cameraIndex ?? 0) + 2)",
+                                dotColor: segmentColor((cameraIndex ?? 0) + 1),
+                                actionTitle: "Remove",
+                                action: removeCamera)
+            GroupedCard {
+                SettingRow("Name") {
                     TextField("Camera Name", text: Binding(
                         get: { camera.name },
                         set: { newName in
@@ -700,74 +751,44 @@ struct AdditionalCameraView: View {
                         }
                     ))
                     .multilineTextAlignment(.trailing)
-                    .foregroundColor(.secondary)
-                    
-                    // Remove Camera Button
-                    Button(action: removeCamera) {
-                        Image(systemName: "minus.circle.fill")
-                            .foregroundStyle(.red)
-                            .font(.title2)
-                    }
+                    .font(Theme.Fonts.body)
+                    .foregroundStyle(Theme.Colors.textTertiary)
                 }
-                
-                Divider()
-                
-                // Brand Picker
-                Picker(selection: brandBinding) {
-                    ForEach(sortedBrandIndices, id: \.self) { brandIndex in
-                        Text(cameras[brandIndex].name).tag(brandIndex)
-                    }
-                } label: {
-                    HStack {
-                        Label("Brand", systemImage: "camera.fill")
-                            .foregroundStyle(.foreground)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
+                RowDivider()
+                SettingRow("Brand", value: cameras[localBrand].name, chevron: true) {
+                    sheetStep = .brand
+                    showSheet = true
                 }
-                .pickerStyle(.navigationLink)
-                
-                // Model Picker
-                Picker(selection: modelBinding) {
-                    ForEach(sortedModelIndices, id: \.self) { modelIndex in
-                        Text(cameras[localBrand].models[modelIndex].name).tag(modelIndex)
-                    }
-                } label: {
-                    HStack {
-                        Label("Model", systemImage: "video.fill")
-                            .foregroundStyle(.foreground)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
+                RowDivider()
+                SettingRow("Model", value: cameras[localBrand].models[localModel].name, chevron: true) {
+                    sheetStep = .model
+                    showSheet = true
                 }
-                .pickerStyle(.navigationLink)
-                
-                // Codec Picker with bitrate
-                VStack(spacing: 4) {
-                    Picker(selection: codecBinding) {
-                        ForEach(sortedCodecIndices, id: \.self) { codecIndex in
-                            Text(cameras[localBrand].models[localModel].codecs[codecIndex].name).tag(codecIndex)
-                        }
-                    } label: {
-                        HStack {
-                            Label("Codec", systemImage: "film.fill")
-                                .foregroundStyle(.foreground)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                        }
-                    }
-                    .pickerStyle(.navigationLink)
-                    
-                    // Add bitrate display
-                    HStack {
-                        Spacer()
-                        Text("\(String(format: "%.1f", cameras[localBrand].models[localModel].codecs[localCodec].bitrate)) Mbps")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
+                RowDivider()
+                SettingRow("Codec",
+                           subLabel: "\(String(format: "%.1f", cameras[localBrand].models[localModel].codecs[localCodec].bitrate)) Mbps",
+                           value: cameras[localBrand].models[localModel].codecs[localCodec].name,
+                           chevron: true) {
+                    sheetStep = .codec
+                    showSheet = true
                 }
             }
+        }
+        .sheet(isPresented: $showSheet) {
+            CameraPickerFlow(
+                step: $sheetStep,
+                brandOptions: dataBrandOptions(cameras: cameras, sorted: sortedBrandIndices),
+                modelOptions: dataModelOptions(brand: cameras[localBrand], sorted: sortedModelIndices),
+                codecOptions: dataCodecOptions(model: cameras[localBrand].models[localModel], sorted: sortedCodecIndices),
+                selectedBrand: localBrand,
+                selectedModel: localModel,
+                selectedCodec: localCodec,
+                onBrand: { brandBinding.wrappedValue = $0 },
+                onModel: { modelBinding.wrappedValue = $0 },
+                onCodec: { codecBinding.wrappedValue = $0 },
+                onDone: { showSheet = false }
+            )
+            .themedSheet()
         }
         .onAppear {
             if case .additionalCamera(camera.id) = activePicker {
