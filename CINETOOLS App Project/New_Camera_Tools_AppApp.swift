@@ -11,7 +11,8 @@ import SwiftUI
 struct New_Camera_Tools_AppApp: App {
     var body: some Scene {
         WindowGroup {
-            HomePageView()
+            MainTabView() // Restyle v4: Tools / Kit Bag / Support tabs
+                .preferredColorScheme(.dark) // Restyle v4: dark is the target
         }
     }
 }

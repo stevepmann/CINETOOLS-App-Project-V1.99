@@ -19,6 +19,10 @@ struct DataTransferView: View {
     @State private var customReadSpeed: String = ""
     @State private var isCustomDrive = false
     @State private var isCustomSpeedOverLimit = false
+
+    // MARK: Restyle v4 — presentation state only
+    @Environment(\.openURL) private var openURL
+    @State private var activeSheet: TransferSheet? = nil
     
     let transferSpeeds = [
         TransferSpeed(name: "USB 2.0", speedMbps: 240),
@@ -65,246 +69,46 @@ struct DataTransferView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color(UIColor.systemBackground)
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 24) {
-                        LazyVStack(spacing: 20) {
-                            Spacer()
-                                .frame(height: 16)
-                            
-                            // Title
-                            Text("Data Transfer Speed Calculator")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.horizontal)
-                            
-                            ModernCard {
-                                VStack(spacing: 12) {
-                                    Picker(selection: $selectedSourceDrive) {
-                                        ForEach(0..<drives.count, id: \.self) { index in
-                                            Text("\(drives[index].name) (\(drives[index].type))").tag(index)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Label {
-                                                Text("Source")
-                                                    .font(.title2)
-                                                    .foregroundColor(.primary)
-                                            } icon: {
-                                                Image(systemName: "externaldrive.fill")
-                                                    .foregroundStyle(.blue)
-                                            }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary.opacity(0.7))
-                                        }
-                                    }
-                                    .pickerStyle(.navigationLink)
-                                    .onChange(of: selectedSourceDrive) { oldValue, newValue in
-                                        isCustomDrive = newValue == drives.count - 1
-                                    }
-                                    
-                                    if isCustomDrive {
-                                        Divider()
-                                        
-                                        // Custom speed input
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Text("Custom Speed")
-                                                .font(.headline)
-                                            
-                                            Spacer()
-                                            
-                                            // Combined text field and Mbps label in one container
-                                            HStack(spacing: 4) {
-                                                TextField("0", text: $customReadSpeed)
-                                                    .multilineTextAlignment(.trailing)
-                                                    .keyboardType(.numberPad)
-                                                    .frame(width: 80)
-                                                    .monospacedDigit()
-                                                    .font(.system(.title3, design: .rounded))
-                                                    .foregroundColor(isCustomSpeedOverLimit ? .red : .primary)
-                                                
-                                                Text("Mbps")
-                                                    .font(.headline)
-                                                    .foregroundStyle(isCustomSpeedOverLimit ? .red : .secondary)
-                                            }
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 8)
-                                            .background(.ultraThinMaterial)
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                            .offset(y: isCustomSpeedOverLimit ? -5 : 0)
-                                            .animation(.spring(response: 0.2, dampingFraction: 0.4), value: isCustomSpeedOverLimit)
-                                        }
-                                    } else {
-                                        Divider()
-                                        
-                                        PowerDrawRow(
-                                            value: drives[selectedSourceDrive].readSpeedMbps,
-                                            label: "Read Speed",
-                                            unit: " Mbps",
-                                            icon: "arrow.down.circle",
-                                            color: .orange
-                                        )
-                                    }
-                                }
-                            }
-                            
-                            // Connection Type Section
-                             ModernCard {
-                                VStack(spacing: 12) {
-                                    Picker(selection: $selectedSpeed) {
-                                        ForEach(0..<transferSpeeds.count, id: \.self) { index in
-                                            Text(transferSpeeds[index].name).tag(index)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Label {
-                                                Text("Connection Type")
-                                                    .font(.title2)
-                                                    .foregroundColor(.primary)
-                                            } icon: {
-                                                Image(systemName: "cable.connector")
-                                                    .foregroundStyle(.blue)
-                                            }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary.opacity(0.7))
-                                        }
-                                    }
-                                    .pickerStyle(.navigationLink)
-                                    
-                                    Divider()
-                                    
-                                    PowerDrawRow(
-                                        value: effectiveTransferSpeed,
-                                        label: "Effective Speed",
-                                        unit: " Mbps",
-                                        icon: "speedometer",
-                                        color: .orange
-                                    )
-                                }
-                            }
-                            
-                            // Data Amount Section
-                            ModernCard {
-                                HStack(alignment: .center, spacing: 16) {
-                                    // Title and icon
-                                    Label {
-                                        Text("Data Amount")
-                                            .font(.title2)
-                                            .foregroundColor(.primary)
-                                    } icon: {
-                                        Image(systemName: "internaldrive.fill")
-                                            .foregroundStyle(.blue)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    // Enhanced text field
-                                    HStack(spacing: 4) {
-                                        TextField("0.0", text: $dataAmountString)
-                                            .multilineTextAlignment(.trailing)
-                                            .keyboardType(.decimalPad)
-                                            .frame(width: 80)
-                                            .monospacedDigit()
-                                            .font(.system(.title3, design: .rounded))
-                                            .foregroundColor(isOverLimit ? .red : .primary)
-                                        
-                                        Text("GB")
-                                            .font(.headline)
-                                            .foregroundStyle(isOverLimit ? .red : .secondary)
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    .offset(y: isOverLimit ? -5 : 0)
-                                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: isOverLimit)
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                        
-                        // Transfer Time Display
-                        ModernCard {
-                            VStack(spacing: 16) {
-                                Text("Estimated Transfer Time")
-                                    .font(.subheadline)
-                                    .textCase(.uppercase)
-                                    .foregroundStyle(.secondary)
-                                
-                                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                    Text(String(format: "%.1f", transferTimeMinutes))
-                                        .font(.system(size: 64, weight: .bold, design: .rounded))
-                                        .monospacedDigit()
-                                        .foregroundColor(.primary)
-                                    Text("min")
-                                        .font(.title3)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                if transferTimeMinutes >= 60 {
-                                    Text(String(format: "%.1f hours", transferTimeMinutes / 60))
-                                        .font(.title3)
-                                        .foregroundStyle(.secondary)
-                                        .monospacedDigit()
-                                }
-                            }
-                            .padding(24)
-                        }
-                        .padding(.horizontal)
-                        
-                        // Support Section
-                        VStack(spacing: 16) {
-                            Link("Request Feature Update/ Gear Addition",
-                                 destination: URL(string: "mailto:app@stevepmann.com")!)
-                                .font(.subheadline)
-                            
-                            VStack(spacing: 1) {
-                                Image("-headerlogo-")
-                                    .resizable()
-                                    .frame(width: 300, height: 100)
-                            }
-                         
-                        }
-                        .padding(10)
-                        .padding(.horizontal)
-                  
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ThemedBackButton(title: "Tools") {
+                        dismiss()
                     }
-                    .padding(.vertical)
-                    
-                }
-                
-                // Add floating back button
-                VStack {
-                    HStack {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.primary)
-                                .padding(12)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 0)
+                    .padding(.horizontal, Theme.Spacing.titleMargin)
+                    .padding(.top, 4)
+
+                    ScreenTitle(text: "Transfer Speed")
+                        .padding(.top, 4)
+
+                    VStack(spacing: 0) {
+                        transferHero
+                            .padding(.top, 16)
+                        setupSection
+                        dataAmountSection
+
+                        TextLink("Request a drive or connection") {
+                            if let url = URL(string: "mailto:app@stevepmann.com") {
+                                openURL(url)
+                            }
                         }
-                        .padding(.leading, 20)
-                        
-                        Spacer()
+                        .padding(.top, 20)
                     }
-                    .padding(.top, 8)
-                    
-                    Spacer()
+                    .padding(.horizontal, Theme.Spacing.cardMargin)
+                    .padding(.bottom, 40)
                 }
             }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+            .themedScreen()
+            .sheet(item: $activeSheet) { sheet in
+                sheetContent(for: sheet)
+                    .themedSheet()
+            }
             .navigationBarHidden(true)
+        }
+        // Moved from the old Source picker (unchanged)
+        .onChange(of: selectedSourceDrive) { oldValue, newValue in
+            isCustomDrive = newValue == drives.count - 1
         }
         .onChange(of: dataAmountString) { oldValue, newValue in
             // Only allow numbers and decimal point
@@ -334,6 +138,237 @@ struct DataTransferView: View {
                 isCustomSpeedOverLimit = value > 100000
             }
         }
+    }
+}
+
+// MARK: - Restyle v4: Transfer screen sections
+//
+// Presentation only. The time comes from the existing transferTimeMinutes and
+// effectiveTransferSpeed. Text-field filtering / limits stay in the existing onChange handlers.
+
+enum TransferSheet: String, Identifiable {
+    case source, connection
+    var id: String { rawValue }
+}
+
+extension DataTransferView {
+
+    // MARK: Display-only speeds (the same inputs effectiveTransferSpeed takes the min() of)
+
+    private var displayConnectionSpeed: Double {
+        transferSpeeds[selectedSpeed].speedMbps
+    }
+
+    private var displaySourceReadSpeed: Double {
+        if selectedSourceDrive == drives.count - 1 && isCustomDrive {
+            return Double(customReadSpeed) ?? 0
+        }
+        return drives[selectedSourceDrive].readSpeedMbps
+    }
+
+    /// The slower of the two is the bottleneck (matches min() in effectiveTransferSpeed)
+    private var driveIsBottleneck: Bool {
+        displaySourceReadSpeed < displayConnectionSpeed
+    }
+
+    private func mbps(_ value: Double) -> String {
+        "\(String(format: "%.0f", value)) Mbps"
+    }
+
+    // MARK: Hero
+
+    var transferHero: some View {
+        ResultHero {
+            Text("Estimated transfer time")
+                .microLabel()
+
+            VStack(alignment: .leading, spacing: 2) {
+                if transferTimeMinutes >= 60 {
+                    HeroNumber(value: String(format: "%.1f", transferTimeMinutes / 60), unit: "hrs")
+                    Text(String(format: "%.1f min", transferTimeMinutes))
+                        .font(Theme.Fonts.mono(15))
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                } else {
+                    HeroNumber(value: String(format: "%.1f", transferTimeMinutes), unit: "min")
+                }
+            }
+
+            VStack(spacing: 14) {
+                SpeedBar(label: "Drive read",
+                         value: mbps(displaySourceReadSpeed),
+                         fraction: fraction(displaySourceReadSpeed),
+                         isBottleneck: driveIsBottleneck)
+                SpeedBar(label: "Connection",
+                         value: mbps(displayConnectionSpeed),
+                         fraction: fraction(displayConnectionSpeed),
+                         isBottleneck: !driveIsBottleneck)
+            }
+
+            Text(driveIsBottleneck
+                 ? "Limited by the drive's read speed — a faster drive or card would help."
+                 : "Limited by the connection — a faster cable or port would help.")
+                .font(Theme.Fonts.archivo(15))
+                .foregroundStyle(Theme.Colors.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func fraction(_ speed: Double) -> Double {
+        let top = max(displaySourceReadSpeed, displayConnectionSpeed)
+        guard top > 0 else { return 0 }
+        return speed / top
+    }
+
+    // MARK: Setup
+
+    var setupSection: some View {
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "Setup")
+            GroupedCard {
+                SettingRow("Source",
+                           subLabel: isCustomDrive ? "Custom read speed" : "Read \(mbps(drives[selectedSourceDrive].readSpeedMbps))",
+                           value: drives[selectedSourceDrive].name,
+                           chevron: true) {
+                    activeSheet = .source
+                }
+
+                if isCustomDrive {
+                    RowDivider()
+                    SettingRow("Custom speed",
+                               subLabel: isCustomSpeedOverLimit ? "Max 100,000 Mbps" : nil) {
+                        HStack(spacing: 6) {
+                            TextField("0", text: $customReadSpeed)
+                                .multilineTextAlignment(.trailing)
+                                .keyboardType(.numberPad)
+                                .font(Theme.Fonts.mono(17))
+                                .foregroundStyle(isCustomSpeedOverLimit ? Theme.Colors.roseSmallOnInk : Theme.Colors.textPrimary)
+                                .frame(width: 100)
+                            Text("Mbps")
+                                .font(Theme.Fonts.mono(15))
+                                .foregroundStyle(isCustomSpeedOverLimit ? Theme.Colors.roseSmallOnInk : Theme.Colors.textTertiary)
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 36)
+                        .background(Theme.Colors.cardRaised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .offset(y: isCustomSpeedOverLimit ? -3 : 0)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.4), value: isCustomSpeedOverLimit)
+                    }
+                }
+
+                RowDivider()
+                SettingRow("Connection",
+                           subLabel: "Effective \(mbps(effectiveTransferSpeed))",
+                           value: transferSpeeds[selectedSpeed].name,
+                           chevron: true) {
+                    activeSheet = .connection
+                }
+            }
+        }
+    }
+
+    // MARK: Data amount (typed field kept)
+
+    var dataAmountSection: some View {
+        VStack(spacing: 0) {
+            ThemedSectionHeader(title: "Data amount")
+            GroupedCard {
+                SettingRow("To offload",
+                           subLabel: isOverLimit ? "Max 5,000 GB" : nil) {
+                    HStack(spacing: 6) {
+                        TextField("0.0", text: $dataAmountString)
+                            .multilineTextAlignment(.trailing)
+                            .keyboardType(.decimalPad)
+                            .font(Theme.Fonts.mono(22))
+                            .foregroundStyle(isOverLimit ? Theme.Colors.roseSmallOnInk : Theme.Colors.textPrimary)
+                            .frame(width: 110)
+                        Text("GB")
+                            .font(Theme.Fonts.mono(17))
+                            .foregroundStyle(isOverLimit ? Theme.Colors.roseSmallOnInk : Theme.Colors.textTertiary)
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 40)
+                    .background(Theme.Colors.cardRaised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .offset(y: isOverLimit ? -3 : 0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.4), value: isOverLimit)
+                }
+            }
+        }
+    }
+
+    // MARK: Sheets
+
+    @ViewBuilder
+    func sheetContent(for sheet: TransferSheet) -> some View {
+        switch sheet {
+        case .source:
+            SheetScaffold(title: "Source", onDone: { activeSheet = nil }) {
+                SelectionList(
+                    options: drives.indices.map { index in
+                        let drive = drives[index]
+                        return PickerOption(id: index,
+                                            title: drive.name,
+                                            subtitle: drive.type == "Custom"
+                                                ? "Enter your own read speed"
+                                                : "\(drive.type) · \(mbps(drive.readSpeedMbps))")
+                    },
+                    selectedID: selectedSourceDrive
+                ) { id in
+                    selectedSourceDrive = id
+                    activeSheet = nil
+                }
+            }
+        case .connection:
+            SheetScaffold(title: "Connection", onDone: { activeSheet = nil }) {
+                SelectionList(
+                    options: transferSpeeds.indices.map { index in
+                        PickerOption(id: index,
+                                     title: transferSpeeds[index].name,
+                                     subtitle: mbps(transferSpeeds[index].speedMbps))
+                    },
+                    selectedID: selectedSpeed
+                ) { id in
+                    selectedSpeed = id
+                    activeSheet = nil
+                }
+            }
+        }
+    }
+}
+
+/// Labelled horizontal speed bar. The bottleneck bar (and its value) is rose.
+fileprivate struct SpeedBar: View {
+    let label: String
+    let value: String
+    let fraction: Double
+    let isBottleneck: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(label)
+                    .font(Theme.Fonts.archivo(15))
+                    .foregroundStyle(Theme.Colors.textSecondary)
+                if isBottleneck {
+                    Text("Bottleneck")
+                        .microLabel(10, color: Theme.Colors.roseSmallOnInk)
+                }
+                Spacer()
+                Text(value)
+                    .font(Theme.Fonts.mono(15))
+                    .foregroundStyle(isBottleneck ? Theme.Colors.roseSmallOnInk : Theme.Colors.textTertiary)
+            }
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.Colors.cardRaised)
+                    Capsule()
+                        .fill(isBottleneck ? Theme.Colors.rose : Theme.Colors.trackInactive)
+                        .frame(width: proxy.size.width * CGFloat(min(max(fraction.isFinite ? fraction : 0, 0), 1)))
+                }
+            }
+            .frame(height: 10)
+            .animation(Theme.Motion.result, value: fraction)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
