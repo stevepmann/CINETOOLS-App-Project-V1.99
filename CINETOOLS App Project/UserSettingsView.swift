@@ -472,6 +472,7 @@ struct UserSettingsView: View {
                 let totalPower = settings.selectedAccessories.reduce(
                     cameras[selectedBrand].models[selectedModel].powerDraw
                 ) { total, index in
+                    guard index < accessories.count else { return total } // ignore stale saved indices
                     let accessory = accessories[index]
                     if accessories[index].category.supportsQuantity {
                         return total + (accessory.powerDraw *
